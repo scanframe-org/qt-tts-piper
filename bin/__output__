@@ -1,0 +1,2 @@
+Place holder for finding the directory to for binary output for the projects.
+Used by cmake function "Sf_LocateOutputDir()" for locating it.

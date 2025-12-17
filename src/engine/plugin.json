@@ -1,0 +1,18 @@
+{
+	"Keys": [
+		"sf",
+		"piper"
+	],
+	"Provider": "sf-piper",
+	"Description": "Scanframe/Pipe Piper TTS engine plugin for Qt6",
+	"Version": "100",
+	"Website": "https://github.com/rhasspy/piper",
+	"Priority": 1000,
+	"Capabilities": [
+		"Speak",
+		"PauseResume",
+		"Synthesize",
+		"WordByWordProgress"
+	]
+}
+

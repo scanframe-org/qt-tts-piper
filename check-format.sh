@@ -1,0 +1,1 @@
+cmake/lib/bin/check-format.sh
