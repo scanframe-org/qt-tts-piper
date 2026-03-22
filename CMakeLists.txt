@@ -21,7 +21,7 @@ list(GET _Versions 2 SF_GIT_TAG_COMMITS)
 # Set the global project name.
 project("qt-tts-piper"
 	VERSION "${SF_GIT_TAG_VERSION}"
-	DESCRIPTION "Scanframe CMake Sample Project"
+	DESCRIPTION "Piper1GPL Text to Speech Qt6 Plugin"
 	HOMEPAGE_URL "https://git.scanframe.com/library/cmake-lib"
 	LANGUAGES C CXX
 )
@@ -47,8 +47,8 @@ if (WIN32)
 	set(CMAKE_C_FLAGS_DEBUG "-D_DEBUG")
 endif ()
 
-# Make sure builds do not wind up in the source directory.
 find_package(SfMacros CONFIG REQUIRED)
+# Make sure builds do not wind up in the source directory.
 find_package(SfBuildCheck CONFIG REQUIRED)
 if (SF_BUILD_QT)
 	# Install/fetch the Qt Libraries when ENV{QT_VER_DIR} is not set.
@@ -58,9 +58,6 @@ endif ()
 # Set the C++ standard to 17 for all projects which is required for the SfCompiler package.
 set(CMAKE_CXX_STANDARD 17)
 find_package(SfCompiler CONFIG REQUIRED)
-
-# Set the 3 CMAKE_?????_OUTPUT_DIRECTORY variables.
-Sf_SetOutputDirs("bin")
 
 if (SF_BUILD_TESTING)
 	# Prevents Catch2 from adding targets.

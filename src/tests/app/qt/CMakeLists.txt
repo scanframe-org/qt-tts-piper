@@ -5,6 +5,9 @@ set(TEST_APP_TARGET "${SF_TEST_NAME_PREFIX}${PROJECT_NAME}-${SF_PROJECT_SUFFIX}"
 # Find the needed packages.
 find_package(Qt6 COMPONENTS Gui Widgets TextToSpeech REQUIRED)
 
+# Import target 'espeak-ng-data' for generating/compiling the required 'espeak-ng-data' directory.
+find_package(SfEspeakNgData 1.52.0 CONFIG REQUIRED)
+
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -17,6 +20,9 @@ Sf_AddExecutable("${TEST_APP_TARGET}")
 
 target_sources("${TEST_APP_TARGET}" PRIVATE main.cpp "${TEST_APP_SOURCES}")
 
+# Add a dependency to the target.
+add_dependencies("${TEST_APP_TARGET}" espeak-ng-data)
+
 # Sets the extension of the generated binary.
 Sf_SetTargetSuffix("${TEST_APP_TARGET}")
 
@@ -28,4 +34,3 @@ Sf_AddTest(${TEST_APP_TARGET} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/..")
 
 # Make sure this test is executed before coverage test.
 Sf_AddAsCoverageTest("${TEST_APP_TARGET}")
-
