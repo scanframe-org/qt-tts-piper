@@ -7,7 +7,7 @@ project("sf-tts-piper" LANGUAGES CXX)
 Sf_AppendCmakePrefixPath("../../cmake")
 
 # Project for creating the piper library from source.
-find_package(PiperLib REQUIRED)
+find_package(SfPiperLib REQUIRED)
 
 # Find the needed packages.
 find_package(Qt6 COMPONENTS Widgets Multimedia TextToSpeech REQUIRED)
@@ -18,37 +18,31 @@ set(CMAKE_AUTORCC ON)
 
 # Add shared library and also sets the dynamic library version.
 Sf_AddSharedLibrary("${PROJECT_NAME}")
+
+# Add custom target to report resource stored versions.
+Sf_AddExifTarget("${PROJECT_NAME}")
+
 # Set the correct plugin directory.
 get_target_property(_LibOutDir "${PROJECT_NAME}" LIBRARY_OUTPUT_DIRECTORY)
 set_target_properties("${PROJECT_NAME}" PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${_LibOutDir}/texttospeech")
-get_target_property(_LibOutDir "${PROJECT_NAME}" LIBRARY_OUTPUT_DIRECTORY)
 
 target_sources(${PROJECT_NAME} PRIVATE
+	TextToSpeechSynthesizer.cpp TextToSpeechSynthesizer.h
 	TextToSpeechEngine.cpp TextToSpeechEngine.h
 	TextToSpeechPlugin.cpp TextToSpeechPlugin.h
+	helpers.cpp helpers.h
 	plugin.json
 )
 
 # Adds the compiler and linker options for coverage.
 Sf_AddTargetForCoverage("${PROJECT_NAME}")
 
-#[[
-qt_add_plugin(${PROJECT_NAME}
-	SHARED
-	CLASS_NAME "TextToSpeechEngine"
-	PLUGIN_TYPE "texttospeech"
-	TextToSpeechEngine.cpp TextToSpeechEngine.h
-	TextToSpeechPlugin.cpp TextToSpeechPlugin.h
-)
-qt_finalize_target(${PROJECT_NAME})
-]]
-
 # Link the needed interface libraries.
 target_link_libraries(${PROJECT_NAME} PRIVATE
 	Qt6::Core
-	#Qt::Multimedia
+	Qt::Multimedia
 	Qt6::TextToSpeech
-	piper::piper
+	piper::static
 )
 
 # Explicitly tell the compiled code the QT libraries are included.

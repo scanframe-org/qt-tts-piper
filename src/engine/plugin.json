@@ -3,10 +3,10 @@
 		"sf",
 		"piper"
 	],
-	"Provider": "sf-piper",
-	"Description": "Scanframe/Pipe Piper TTS engine plugin for Qt6",
+	"Provider": "Scanframe",
+	"Description": "Scanframe/Piper TTS engine plugin for Qt6",
 	"Version": "100",
-	"Website": "https://github.com/rhasspy/piper",
+	"Website": "https://github.com/Scanframe",
 	"Priority": 1000,
 	"Capabilities": [
 		"Speak",

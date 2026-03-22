@@ -10,7 +10,7 @@
 # Optional user CMake include file which is included when it exists.
 /user.cmake
 # Any cmake-build directory in the project tree.
-**/cmake-build*/*
+/cmake-build
 # Developers addition on the 'CMakePresets.json' file.
 /CMakeUserPresets.json
 # Binary directories containg build/packaged results.
@@ -20,6 +20,10 @@
 /bin/lnx64*/*
 /bin/win64*/*
 /bin/man/*
+/bin/models
+/bin/config/models/*
+/download
+/progress
 # Location of downloaded and uncompressed libraries in the project root.
 /lib/*
 # Credential files for testing CI-pipeline called scripts.

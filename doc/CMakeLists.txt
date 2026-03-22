@@ -24,8 +24,15 @@ if (SfDoxygen_FOUND)
 	list(FILTER _Targets EXCLUDE REGEX "^${SF_TEST_NAME_PREFIX}.*$")
 	# Iterate through all targets to remove.
 	foreach (_Target IN LISTS _Targets)
+		# Exclude fetched targets.
+		get_target_property(_SourceDir "${_Target}" SOURCE_DIR)
+		string(FIND "${_SourceDir}" "${FETCHCONTENT_BASE_DIR}" _Pos)
+		if(_Pos EQUAL 0)
+			message(VERBOSE "Document Target Skipped: ${_Target}")
+			continue()
+		endif ()
 		get_target_property(_Type "${_Target}" TYPE)
-		# Only use executables and shared libraries.
+		# Only use executables and shared or static libraries.
 		if (_Type STREQUAL "EXECUTABLE" OR _Type STREQUAL "SHARED_LIBRARY" OR _Type STREQUAL "STATIC_LIBRARY")
 			message(VERBOSE "Document Target (${_Type}): ${_Target}")
 		else ()

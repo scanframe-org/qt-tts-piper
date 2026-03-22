@@ -19,22 +19,24 @@ int checkPlugin(const QString& path)
 int main(int argc, char* argv[])
 {
 	QApplication app(argc, argv);
-	auto path = QCoreApplication::applicationDirPath().append(QDir::separator()).append("lib");
+	auto path = QDir(QCoreApplication::applicationDirPath()).absoluteFilePath("lib");
 	qDebug() << "Adding:" << path;
 	QCoreApplication::addLibraryPath(path);
 	qDebug() << QCoreApplication::libraryPaths();
 	// Initialize the base using the application file path.
 	QFileInfo fi(QCoreApplication::applicationFilePath());
 	// Set the instance to change the extension only.
-	fi.setFile(fi.absolutePath() + QDir::separator() + "config", fi.completeBaseName() + ".ini");
+	QString fp = QFileInfo(fi.absolutePath()).absolutePath() + QDir::separator() + "config";
+	fi.setFile(fp, fi.completeBaseName() + ".ini");
 	// Create an instance to handle settings.
 	QSettings settings(fi.absoluteFilePath(), QSettings::IniFormat);
 	//
-	auto win = new sf::Window(nullptr);
-	win->storeState(settings, false);
+	auto win = new sf::MainWindow(nullptr);
+	win->setSettings(settings);
+	win->storeState(false);
 	win->show();
 	auto rv = app.exec();
-	win->storeState(settings, true);
+	win->storeState(true);
 	delete win;
 	//
 	return rv;

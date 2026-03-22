@@ -1,0 +1,106 @@
+@startuml
+' Available themes: materia, vibrant, toy, crt-amber
+'!theme vibrant
+<style>
+	FontName Arial
+	FontSize 11
+	Title {
+		FontSize 18
+		FontStyle Bold
+	}
+	Document {
+		BackgroundColor #fdfdfd
+	}
+	arrow {
+		LineColor darkred
+	}
+	box {
+		LineColor black
+		Padding 5
+	}
+	sequenceDiagram {
+		participant {
+			HorizontalAlignment center
+			Padding 10
+			FontSize 13
+			FontStyle Bold
+			LineColor DarkRed
+			BackgroundColor LightGreen
+		}
+	}
+	sequence {
+		BackgroundColor Red
+	}
+	separator {
+		BackgroundColor #f0f0f0
+		LineColor DarkBlue
+		FontColor Black
+		FontSize 11
+		FontStyle Bold
+	}
+	delay {
+		FontStyle Bold
+	}
+</style>
+
+title "TTS Engine"
+
+box "Main Thread (GUI)" #Khaki
+	participant "TextToSpeechEngine" as Engine
+	participant "QAudioSink" as Audio
+end box
+
+box "Worker Thread" #LightBlue
+	participant "TextToSpeechSynthesizer" as Worker
+	participant "Piper Engine" as Piper
+end box
+
+== Initialization ==
+Engine -> Worker : moveToThread(&_worker)
+Engine -> Worker : start()
+activate Worker
+Worker -> Piper : piper_create()
+
+== Synthesis Request ==
+[-> Engine : say(text)
+Engine -> Worker : add(lines)
+activate Engine
+Worker -> Worker : _mutexData.lock()
+Worker -> Worker : _queueText.enqueue(lines)
+Worker -> Worker : _mutexData.unlock()
+Worker -> Worker : _condition.wakeOne()
+deactivate Engine
+
+== Synthesis Process ==
+Worker -> Worker : _condition.wait()
+... wait for work ...
+Worker -> Piper : piper_synthesize_start(text)
+loop for each audio chunk
+	Piper -> Worker : piper_synthesize_next()
+	Worker -> Worker : _mutexData.lock()
+	Worker -> Worker : _buffers.enqueue(chunk)
+	Worker -> Worker : _mutexData.unlock()
+end
+Worker -> Engine : emit synthesisQueued()
+
+== Playback ==
+Engine -> Engine : playQueued()
+activate Engine
+Engine -> Worker : handleQueued(callback)
+activate Worker
+Worker -> Worker : _mutexData.lock()
+Worker -> Engine : callback(buffer)
+Worker -> Worker : _mutexData.unlock()
+deactivate Worker
+Engine -> Audio : start(buffer)
+deactivate Engine
+
+Audio -> Engine : emit stateChanged(ActiveState)
+Engine -> Engine : updateState(Speaking)
+
+... audio finishes ...
+Audio -> Engine : emit stateChanged(IdleState)
+Engine -> Engine : AudioSinkStateChange(IdleState)
+Engine -> Worker : handleQueued(callback)
+
+@enduml
