@@ -18,11 +18,13 @@ list(GET _Versions 0 SF_GIT_TAG_VERSION)
 list(GET _Versions 1 SF_GIT_TAG_RC)
 list(GET _Versions 2 SF_GIT_TAG_COMMITS)
 
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
+
 # Set the global project name.
 project("qt-tts-piper"
 	VERSION "${SF_GIT_TAG_VERSION}"
 	DESCRIPTION "Piper1GPL Text to Speech Qt6 Plugin"
-	HOMEPAGE_URL "https://git.scanframe.com/library/cmake-lib"
+	HOMEPAGE_URL "https://git.scanframe.com/shared/qt-tts-piper"
 	LANGUAGES C CXX
 )
 
@@ -44,7 +46,12 @@ if (WIN32)
 		set(Vulkan_INCLUDE_DIR "/tmp")
 	endif ()
 	# Needed to be able to set debug breaks using MSVC
-	set(CMAKE_C_FLAGS_DEBUG "-D_DEBUG")
+	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -D_DEBUG")
+	# When using the release runtime library, the QT_NO_DEBUG must be defined
+	# to prevent the "Cannot mix debug and release libraries" error when loading plugins.
+	if (CMAKE_MSVC_RUNTIME_LIBRARY MATCHES "DLL$|Static$")
+		add_compile_definitions(QT_NO_DEBUG)
+	endif ()
 endif ()
 
 find_package(SfMacros CONFIG REQUIRED)
@@ -54,6 +61,7 @@ if (SF_BUILD_QT)
 	# Install/fetch the Qt Libraries when ENV{QT_VER_DIR} is not set.
 	find_package(SfQtLibrary 6.10.1 CONFIG REQUIRED)
 endif ()
+
 
 # Set the C++ standard to 17 for all projects which is required for the SfCompiler package.
 set(CMAKE_CXX_STANDARD 17)
@@ -92,6 +100,11 @@ Sf_AddAsCoverageTest("")
 
 # Add Sub Projects in the right order of dependencies.
 add_subdirectory(src)
+
+if (SF_BUILD_TESTING)
+	sfDownloadPiperModels(DEFAULT)
+endif ()
+
 # Add Doxygen document project.
 if (EXISTS "${CMAKE_CURRENT_LIST_DIR}/doc")
 	add_subdirectory(doc)
@@ -109,3 +122,5 @@ if (NOT CMAKE_BUILD_TYPE STREQUAL "Coverage")
 		include(cmake/cpack/CPackConfig.cmake)
 	endif ()
 endif ()
+
+#message(FATAL_ERROR "The location of the 'onnxruntime.dll' for WIN32 builds must be the executable one.")

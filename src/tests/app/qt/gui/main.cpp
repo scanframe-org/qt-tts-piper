@@ -1,10 +1,20 @@
 #include "test-Window.h"
 #include <QApplication>
+#include <QThreadPool>
 #include <QDebug>
 #include <QDir>
 #include <QFileInfo>
 #include <QPluginLoader>
 #include <QSettings>
+#if defined(__MINGW32__) || defined(__MINGW64__)
+	#include <windows.h>
+
+void exitNow(int exitcode)
+{
+	qInfo() << "Terminating abnormally due to bug GCC #116159";
+	TerminateProcess(GetCurrentProcess(), exitcode);
+}
+#endif
 
 int checkPlugin(const QString& path)
 {
@@ -31,13 +41,17 @@ int main(int argc, char* argv[])
 	// Create an instance to handle settings.
 	QSettings settings(fi.absoluteFilePath(), QSettings::IniFormat);
 	//
-	auto win = new sf::MainWindow(nullptr);
+	auto win = new sf::MainWindow();
 	win->setSettings(settings);
 	win->storeState(false);
 	win->show();
 	auto rv = app.exec();
 	win->storeState(true);
 	delete win;
-	//
+// MinGW GCC < 13.4 detection for thread_local destructor ordering bug GCC #116159"
+#if (defined(__MINGW32__) || defined(__MINGW64__)) && (__GNUC__ < 13 || (__GNUC__ == 13 && __GNUC_MINOR__ < 4))
+	QThreadPool::globalInstance()->waitForDone();
+	exitNow(rv);
+#endif
 	return rv;
 }

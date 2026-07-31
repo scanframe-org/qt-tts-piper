@@ -2,6 +2,8 @@
 #include "ui_test-Window.h"
 #include <QDir>
 #include <QLoggingCategory>
+#include <QMediaDevices>
+#include <QAudioDevice>
 #include <algorithm>
 
 namespace sf
@@ -11,16 +13,14 @@ using namespace Qt::StringLiterals;
 
 int indexFromComboBoxByData(const QComboBox* comboBox, const QVariant& value, int default_index)
 {
-	auto index = comboBox->findData(value);
-	if (index >= 0)
-			return index;
+	if (auto index = comboBox->findData(value); index >= 0)
+		return index;
 	return default_index;
 }
 
 int indexFromComboBoxByText(const QComboBox* comboBox, const QString& value, int default_index)
 {
-	auto index = comboBox->findText(value);
-	if (index >= 0)
+	if (auto index = comboBox->findText(value); index >= 0)
 		return index;
 	return default_index;
 }
@@ -29,18 +29,23 @@ MainWindow::MainWindow(QWidget* parent)
 	: QMainWindow(parent)
 	, ui(new Ui::MainWindow)
 	, _tts(nullptr)
-#if WIN32
-	, _engineProvider("sapi")
-#else
-	, _engineProvider("sf-piper")
-#endif
+	, _audioDeviceId("")
 {
-	//QLoggingCategory::setFilterRules(u"qt.speech.tts=true \n qt.speech.tts.*=true"_s);
+	// QLoggingCategory::setFilterRules(u"qt.speech.tts=true \n qt.speech.tts.*=true"_s);
 	ui->setupUi(this);
-	// Populate the engine selection list
-	ui->cbEngine->addItem(u"Default"_s, u"default"_s);
+	// Populate the audio device dropdown list with device ids.
+	for (const auto& output: QMediaDevices::audioOutputs())
+	{
+		// Add the item to the list using a prefix of '*' to indicate the default device.
+		ui->cbAudioDevice->addItem((output.isDefault() ? u"*"_s : u""_s) + output.description(), QString::fromUtf8(output.id()));
+		// Select the default audio device.
+		if (output.isDefault())
+			ui->cbAudioDevice->setCurrentIndex(ui->cbAudioDevice->count() - 1);
+	}
+	// Populate the engine selection list an empty string for default.
+	ui->cbEngine->addItem(u"Default"_s, u""_s);
 	// Populate the engine dropdown list.
-	for (const QString& engine: QTextToSpeech::availableEngines())
+	for (const auto& engine: QTextToSpeech::availableEngines())
 		ui->cbEngine->addItem(engine, engine);
 	ui->cbEngine->setCurrentIndex(0);
 	// Select the first engine by default.
@@ -52,11 +57,12 @@ MainWindow::MainWindow(QWidget* parent)
 	connect(ui->cbEngine, &QComboBox::currentIndexChanged, this, &MainWindow::selectEngine);
 	connect(ui->cbLanguage, &QComboBox::currentIndexChanged, this, &MainWindow::selectLanguage);
 	connect(ui->cbVoice, &QComboBox::currentIndexChanged, this, &MainWindow::selectVoice);
+	connect(ui->cbAudioDevice, &QComboBox::currentIndexChanged, this, &MainWindow::selectAudioDevice);
 }
 
 MainWindow::~MainWindow()
 {
-	(void)_tts->disconnect(this);
+	(void) _tts->disconnect(this);
 	delete ui;
 }
 
@@ -72,6 +78,7 @@ void MainWindow::storeState(bool save, bool text_only)
 		qWarning() << "Settings not set!";
 		return;
 	}
+	auto keyAudioDeviceId(u"AudioDeviceId"_s);
 	auto keyState(u"State"_s);
 	auto keyText(u"Text"_s);
 	auto keyRate(u"Rate"_s);
@@ -89,6 +96,7 @@ void MainWindow::storeState(bool save, bool text_only)
 		if (!text_only)
 		{
 			_settings->setValue(keyState, geometry());
+			_settings->setValue(keyAudioDeviceId, ui->cbAudioDevice->currentData().toString());
 			_settings->setValue(keyProvider, ui->cbEngine->currentData().toString());
 			_settings->setValue(keyLanguage, ui->cbLanguage->currentData().value<QLocale>().name());
 			_settings->setValue(keyVoice, ui->cbVoice->currentText());
@@ -104,7 +112,8 @@ void MainWindow::storeState(bool save, bool text_only)
 		{
 			setGeometry(_settings->value(keyState, geometry()).toRect());
 			ui->cbLanguage->setCurrentIndex(indexFromComboBoxByData(ui->cbLanguage, QVariant(QLocale(_settings->value(keyLanguage, u"C"_s).toString())), 0));
-			ui->cbEngine->setCurrentIndex(indexFromComboBoxByData(ui->cbEngine, _settings->value(keyProvider, u"default"_s), 0));
+			ui->cbAudioDevice->setCurrentIndex(indexFromComboBoxByData(ui->cbAudioDevice, QVariant(_settings->value(keyAudioDeviceId, u""_s)), 0));
+			ui->cbEngine->setCurrentIndex(indexFromComboBoxByData(ui->cbEngine, _settings->value(keyProvider, u""_s), 0));
 			ui->cbVoice->setCurrentIndex(indexFromComboBoxByText(ui->cbVoice, _settings->value(keyVoice, u"default"_s).toString(), 0));
 			ui->sRate->setValue(_settings->value(keyRate, ui->sRate->value()).toInt());
 		}
@@ -154,17 +163,38 @@ void MainWindow::stateChanged(QTextToSpeech::State state)
 	ui->pbStop->setEnabled(state == QTextToSpeech::Speaking || state == QTextToSpeech::Paused);
 }
 
+void MainWindow::selectAudioDevice(int index)
+{
+	// Get the device name from the index.
+	if (auto dev_id = ui->cbAudioDevice->itemData(index).toString(); !dev_id.isEmpty() && _tts)
+	{
+		// Assign the new output device.
+		_audioDeviceId = dev_id;
+		// When the audio device changes, recreate the TTS instance.
+		if (_tts->property("audioDeviceId") != dev_id)
+			selectEngine(-1);
+	}
+}
+
 void MainWindow::selectEngine(int index)
 {
+	bool recreate = false;
+	if (index < 0)
+	{
+		recreate = true;
+		index = ui->cbEngine->currentIndex();
+	}
 	// Get the engine name from the index.
 	const QString engine = ui->cbEngine->itemData(index).toString();
 	// Check recreation of the engine is needed.
-	if (_tts && _tts->engine() == engine)
+	if (!recreate && _tts && _tts->engine() == engine)
 		return;
 	// Delete the previous TTS engine when it is present at all.
 	delete _tts;
-	// Create the selected engine.
-	_tts = engine == u"default" ? new QTextToSpeech(this) : new QTextToSpeech(engine, this);
+	// Report that the engine is created.
+	qDebug() << "Creating TTS engine: " << engine << ", Audio device id: " << _audioDeviceId;
+	_tts = new QTextToSpeech(engine, {{"audioDeviceId", _audioDeviceId}}, this);
+	_tts->setProperty("audioDeviceId", _audioDeviceId);
 	// Some engines initialize asynchronously.
 	if (_tts->state() == QTextToSpeech::Ready)
 		onEngineReady();
@@ -190,7 +220,7 @@ void MainWindow::onEngineReady()
 	ui->pbPause->setVisible(hasPauseResume);
 	ui->pbResume->setVisible(hasPauseResume);
 	// Block signals of the languages combobox while populating.
-	QSignalBlocker blocker(ui->cbLanguage);
+	ui->cbLanguage->blockSignals(true);
 	// Clear the list of languages.
 	ui->cbLanguage->clear();
 	QList<QLocale> locales = _tts->availableLocales();
@@ -221,7 +251,7 @@ void MainWindow::onEngineReady()
 	connect(_tts, &QTextToSpeech::stateChanged, this, &MainWindow::stateChanged);
 	connect(_tts, &QTextToSpeech::localeChanged, this, &MainWindow::localeChanged);
 	//
-	blocker.unblock();
+	ui->cbLanguage->blockSignals(false);
 	//
 	localeChanged(current);
 }
@@ -235,25 +265,29 @@ void MainWindow::selectLanguage(int language)
 
 void MainWindow::selectVoice(int index)
 {
-	auto voice = _voices.at(index);
-	_tts->setVoice(voice);
+	// Bailout when out of range.
+	if (index < 0 || index >= _voices.size())
+		return;
+	_tts->setVoice(_voices.at(index));
 }
 
 void MainWindow::localeChanged(const QLocale& locale)
 {
-	qDebug() << "Locale changed:" << locale;
 	QVariant localeVariant(locale);
 	ui->cbLanguage->setCurrentIndex(ui->cbLanguage->findData(localeVariant));
 	QSignalBlocker blocker(ui->cbVoice);
 	ui->cbVoice->clear();
 	_voices = _tts->availableVoices();
 	QVoice currentVoice = _tts->voice();
+	int index = -1;
 	for (auto& voice: std::as_const(_voices))
 	{
 		ui->cbVoice->addItem(u"%1 - %2 - %3"_s.arg(voice.name(), QVoice::genderName(voice.gender()), QVoice::ageName(voice.age())));
+		// Set the index which matches the current voice name if not set already.
 		if (voice.name() == currentVoice.name())
-			ui->cbVoice->setCurrentIndex(ui->cbVoice->count() - 1);
+			index = ui->cbVoice->count() - 1;
 	}
+	// Assign the found index to the current voice or when not -1.
+	ui->cbVoice->setCurrentIndex(index);
 }
-
 }// namespace sf

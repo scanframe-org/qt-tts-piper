@@ -1,4 +1,5 @@
 #pragma once
+#include <QAudioDevice>
 #include <QSettings>
 #include <QTextToSpeech>
 #include <QMainWindow>
@@ -33,6 +34,7 @@ class MainWindow : public QMainWindow
 		void setPitch(int);
 		void setVolume(int volume);
 		void stateChanged(QTextToSpeech::State state);
+		void selectAudioDevice(int index);
 		void selectEngine(int index);
 		void selectLanguage(int language);
 		void selectVoice(int index);
@@ -44,7 +46,7 @@ class MainWindow : public QMainWindow
 		Ui::MainWindow* ui;
 		QSettings* _settings;
 		QTextToSpeech* _tts;
-		QString _engineProvider;
+		QString _audioDeviceId;
 		QList<QVoice> _voices;
 };
 

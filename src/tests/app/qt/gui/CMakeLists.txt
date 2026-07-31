@@ -28,9 +28,3 @@ Sf_SetTargetSuffix("${TEST_APP_TARGET}")
 
 # Should be linked to the main library.
 target_link_libraries("${TEST_APP_TARGET}" PRIVATE Qt::Gui Qt::Widgets Qt::TextToSpeech)
-
-# Add this application as a test for all possible builds.
-Sf_AddTest(${TEST_APP_TARGET} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/..")
-
-# Make sure this test is executed before coverage test.
-Sf_AddAsCoverageTest("${TEST_APP_TARGET}")

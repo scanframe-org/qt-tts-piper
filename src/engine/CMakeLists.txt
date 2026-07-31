@@ -19,18 +19,29 @@ set(CMAKE_AUTORCC ON)
 # Add shared library and also sets the dynamic library version.
 Sf_AddSharedLibrary("${PROJECT_NAME}")
 
+# Set the correct plugin directory.
+if (WIN32)
+	get_target_property(_LibOutDir "${PROJECT_NAME}" RUNTIME_OUTPUT_DIRECTORY)
+else ()
+	get_target_property(_LibOutDir "${PROJECT_NAME}" LIBRARY_OUTPUT_DIRECTORY)
+endif ()
+set(_LibOutDir "${_LibOutDir}/texttospeech")
+if (WIN32)
+	set_target_properties("${PROJECT_NAME}" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${_LibOutDir}")
+else ()
+	set_target_properties("${PROJECT_NAME}" PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${_LibOutDir}")
+endif ()
+
 # Add custom target to report resource stored versions.
 Sf_AddExifTarget("${PROJECT_NAME}")
-
-# Set the correct plugin directory.
-get_target_property(_LibOutDir "${PROJECT_NAME}" LIBRARY_OUTPUT_DIRECTORY)
-set_target_properties("${PROJECT_NAME}" PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${_LibOutDir}/texttospeech")
 
 target_sources(${PROJECT_NAME} PRIVATE
 	TextToSpeechSynthesizer.cpp TextToSpeechSynthesizer.h
 	TextToSpeechEngine.cpp TextToSpeechEngine.h
 	TextToSpeechPlugin.cpp TextToSpeechPlugin.h
+	AudioStream.cpp AudioStream.h
 	helpers.cpp helpers.h
+	logging.cpp logging.h
 	plugin.json
 )
 
@@ -54,4 +65,3 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 	# When enabled the 'target.h' file enables reporting of the current target being build using 'pragma message'.
 	#REPORT_TARGET
 )
-

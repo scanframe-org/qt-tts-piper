@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.27)
 #[[
 
 # Only one version can be specified per top level project.

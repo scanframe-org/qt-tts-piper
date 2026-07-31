@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.27)
 ###
 ### This libray compiles content of the required `espeak-ng-data` directory.
 ### It uses the native compiler to build the actual compiler.
@@ -13,6 +14,17 @@ find_package(EspeakNg CONFIG REQUIRED)
 find_package(EspeakNg 1.52.0 CONFIG REQUIRED)
 
 ]]
+
+# Bailout when the target is already defined.
+if (TARGET "espeak-ng-data")
+	# Already defined. Verify if the version is the same.
+	if (SfEspeakNgData_FIND_VERSION VERSION_EQUAL SfEspeakNgData_VERSION)
+		return()
+	endif ()
+	message(SEND_ERROR
+		"Already loaded version ${SfEspeakNgData_VERSION} "
+		"but version ${PACKAGE_FIND_VERSION} was requested.")
+endif ()
 
 # Include the file to have the variable `FETCHCONTENT_BASE_DIR` set so it can be used.
 include(FetchContent)

@@ -8,16 +8,17 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 
 # Global constants for URLs and paths.
-VOICES_JSON_URL: str = "https://huggingface.co/rhasspy/piper-voices/resolve/main/voices.json"
 BASE_DOWNLOAD_URL: str = "https://huggingface.co/rhasspy/piper-voices/resolve/main"
+VOICES_JSON_URL: str = f"{BASE_DOWNLOAD_URL}/voices.json"
 MODELS_DIR: Path = Path(__file__).parent / "bin" / "models"
 # List of default voices to download.
+# noinspection SpellCheckingInspection
 DEFAULT_VOICES: List[List[str]] = [
+	["en", "US", "hfc_female", "medium"],
+	["en" ,"US" ,"hfc_male", "medium"],
 	["en", "GB", "cori", "high"],
 	["en", "US", "lessac", "medium"],
 	["en", "US", "ljspeech", "medium"],
-	["en", "US", "hfc_female", "medium"],
-	["en" ,"US" ,"hfc_male", "medium"],
 ]
 
 def download_file(url: str, destination: Path) -> None:
@@ -161,6 +162,7 @@ def main() -> int:
 	parser = argparse.ArgumentParser(description="Download Piper voice models.")
 	parser.add_argument("-l", "--language", help="Language code (e.g., en, nl)")
 	parser.add_argument("-r", "--region", help="Region code (e.g., GB, US, NL)")
+	# noinspection SpellCheckingInspection
 	parser.add_argument("-d", "--dataset", help="Dataset name (e.g., vctk, lessac, pim)")
 	parser.add_argument("-q", "--quality", help="Quality (e.g., low, medium, high)")
 	parser.add_argument("-m", "--models-directory", help=f"Directory to store models (default: {MODELS_DIR})")
@@ -173,7 +175,7 @@ def main() -> int:
 
 	args = parser.parse_args()
 	models_dir = Path(args.models_directory) if args.models_directory else MODELS_DIR
-	voices = None
+	voices: Dict[str, Any] = {}
 
 	if args.default:
 		for voice in DEFAULT_VOICES:

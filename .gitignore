@@ -1,6 +1,7 @@
 # Files from possible IDE's.
 /.metadata
 /.idea
+/.junie
 /.run
 /.vscode
 /.vs
@@ -34,8 +35,11 @@
 /.version-bump
 # Test bash scripts.
 /test-*.sh
+/test-*.py
 # Downloaded tools directory locations for machines (Windows only).
 /.tools-dir-*
+# Link to Qt logging rules file in the home directory.
+/qtlogging.ini
 # CMake include file overrulling the cache instead of changing the CMakePresets.json file.
 # Keeps all empty directories.
 !**/.gitkeep
