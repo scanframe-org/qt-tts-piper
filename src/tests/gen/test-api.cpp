@@ -149,7 +149,6 @@ TEST_CASE("tts-piper-1", "[say]")
 		}
 		// When shorter then 5 seconds it did not process all lines.
 		REQUIRE(stopwatch.durationElapsed() > 8s);
-		/*
 		// Say a test message and enqueue another.
 		tts->say("Hello, world!");
 		tts->enqueue("This is a long text for speaking.");
@@ -166,7 +165,6 @@ TEST_CASE("tts-piper-1", "[say]")
 			qSleep(50);
 		// State must be Ready after this.
 		REQUIRE(tts->state() == QTextToSpeech::Ready);
-	*/
 	}
 }
 
@@ -203,10 +201,9 @@ TEST_CASE("tts-piper-2", "[synth]")
 		}
 		else
 			REQUIRE(tts->state() == QTextToSpeech::Ready);
-
 		// Use the synthesize function with a callback lambda function.
 		tts->synthesize(
-			"This text is played externally. This is the second part using a separate call.", [parent](const QAudioFormat& format, const QByteArray& buffer) {
+			"This text is played externally. This is the second sentence using a separate process step.", [parent](const QAudioFormat& format, const QByteArray& buffer) {
 				REQUIRE(format.isValid());
 				REQUIRE(!buffer.isEmpty());
 				qDebug() << "Synthesized data" << format << buffer.size();
@@ -215,10 +212,17 @@ TEST_CASE("tts-piper-2", "[synth]")
 		);
 		REQUIRE(tts->state() == QTextToSpeech::Synthesizing);
 		// Wait for synthesis to complete, up to 10 seconds.
-		for (int i = 0; i < 20 && tts->state() == QTextToSpeech::Synthesizing; i++)
+		for (int i = 0; i < 30; i++)
+		{
 			qSleep(500);
-		qDebug() << "State: " << tts->state();
-		REQUIRE(tts->state() == QTextToSpeech::Ready);
+			auto state = tts->state();
+			qInfo() << "State: " << state;
+			if (state != QTextToSpeech::Synthesizing)
+				break;
+		}
+		auto state = tts->state();
+		qInfo() << "State: " << state;
+		REQUIRE(state == QTextToSpeech::Ready);
 		while (parent->findChildren<QAudioSink*>().size() > 0)
 			qSleep(100);
 	}

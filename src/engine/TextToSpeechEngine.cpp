@@ -311,30 +311,18 @@ void TextToSpeechEngine::handleQueued()
 	if (_playSentry)
 		return;
 	_playSentry = true;
-	// Get the configured audio sink device.
-	if (auto as = getAudioSink())
-	{
-		// Get the current state.
-		auto state = as->state();
-		// Only when idle or stopped state the next buffer can be played.
-		if (state == QAudio::State::IdleState || state == QAudio::State::StoppedState)
+	// Play the next buffer queued.
+	_worker.handleQueued([&](TextToSpeechSynthesizer::QueueFlag flag, const QByteArray& buffer) {
+		qCDebug(logCategory) << "Process queued: " << flag << ", Size:" << buffer.size();
+		if (flag == TextToSpeechSynthesizer::qfPlay)
+			playBuffer(buffer);
+		else
 		{
-			// Play the next buffer queued.
-			_worker.handleQueued([&](TextToSpeechSynthesizer::QueueFlag flag, const QByteArray& buffer) {
-				qCInfo(logCategory) << "Process queued: " << flag << ", Size:" << buffer.size();
-				if (flag == TextToSpeechSynthesizer::qfPlay)
-				{
-					playBuffer(buffer);
-				}
-				else
-				{
-					sendBuffer(buffer);
-					if (flag == TextToSpeechSynthesizer::qfSendEnd)
-						updateState(QTextToSpeech::Ready);
-				}
-			});
+			sendBuffer(buffer);
+			if (flag == TextToSpeechSynthesizer::qfSendEnd)
+				updateState(QTextToSpeech::Ready);
 		}
-	}
+	});
 }
 
 void TextToSpeechEngine::updateState(QTextToSpeech::State new_state)
@@ -417,8 +405,9 @@ void TextToSpeechEngine::AudioSinkStateChange(QAudio::State state)
 			else
 			{
 				// Play the next buffer queued.
-				_worker.handleQueued([&](bool speak, const QByteArray& buffer) -> bool {
-					playBuffer(buffer);
+				_worker.handleQueued([&](TextToSpeechSynthesizer::QueueFlag flag, const QByteArray& buffer) -> bool {
+					if (flag == TextToSpeechSynthesizer::QueueFlag::qfPlay)
+						playBuffer(buffer);
 					return true;
 				});
 			}

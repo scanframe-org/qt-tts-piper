@@ -218,7 +218,7 @@ bool TextToSpeechSynthesizer::handleQueued(const callback_t& callback)
 		do
 		{
 			auto [flag, buffer](_buffers.dequeue());
-			//qCInfo(logCategory) << "Handling buffer:" << _buffers.size() << ", Size:" << buffer.size();
+			qCDebug(logCategory) << "Handling buffer:" << _buffers.size() << "Flag:" << flag << ", Size:" << buffer.size();
 			if (flag == qfPlay)
 				callback(qfPlay, buffer);
 			else
