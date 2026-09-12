@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.27)
+cmake_minimum_required(VERSION 3.29...4.4)
 ###
 ### This libray compiles content of the required `espeak-ng-data` directory.
 ### It uses the native compiler to build the actual compiler.

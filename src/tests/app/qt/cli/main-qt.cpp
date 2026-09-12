@@ -124,6 +124,7 @@ void playBuffer(const QByteArray& data, const QAudioFormat& format, QObject* par
 	QTimer::singleShot(10000, &loop, &QEventLoop::quit);
 	loop.exec();
 }
+
 int main(int argc, char* argv[])
 {
 	// The environment variable has precedence.
@@ -148,7 +149,7 @@ int main(int argc, char* argv[])
 	// Option for selecting a voice.
 	QCommandLineOption opt_voice({"o", "voice"}, "Voice to use.", "voice", "");
 	// Option to set the speech rate.
-	QCommandLineOption opt_rate({"r", "rate"}, "Rate of speech.", "rate", "0");
+	QCommandLineOption opt_rate({"r", "rate"}, "Rate of speech with a range of -1 to 1 and default 0.", "rate", "0");
 	// Define an option that takes the TTS engine.
 	QCommandLineOption opt_filepath({"f", "filepath"}, "Filepath for output wav-files.", "filepath", "output");
 	// Define an option that takes the text value.
@@ -183,8 +184,11 @@ int main(int argc, char* argv[])
 	if (!parser.value(opt_voice).isEmpty())
 	{
 		for (auto& voice : tts->availableVoices())
-			if (voice.name() == parser.value(opt_voice))
+		{
+			auto voice_name = parser.value(opt_voice);
+			if (voice.name() == voice_name)
 				tts->setVoice(voice);
+		}
 		if (tts->voice().name() != parser.value(opt_voice))
 			qWarning() << "Voice could not be set:" << tts->voice().name();
 	}

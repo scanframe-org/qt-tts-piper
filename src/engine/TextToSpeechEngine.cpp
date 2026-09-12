@@ -69,7 +69,7 @@ TextToSpeechEngine::TextToSpeechEngine(const QVariantMap& parameters, QObject* p
 		{
 			auto [model_name, gender] = getModelGenderFromFilename(fi.completeBaseName(), i);
 			if (speakers > 1)
-				model_name.append(u" [%1]"_s.arg(i));
+				model_name.append(u"_%1"_s.arg(i));
 			auto voice = createVoice(
 				model_name, loc, gender, QVoice::Age::Adult,//
 				QVariant::fromValue(FileSpeaker(fi.completeBaseName(), i))
