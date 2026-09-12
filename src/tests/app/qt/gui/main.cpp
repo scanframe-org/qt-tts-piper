@@ -4,7 +4,7 @@
 #include <QDebug>
 #include <QDir>
 #include <QFileInfo>
-#include <QPluginLoader>
+#include <QLoggingCategory>
 #include <QSettings>
 #if defined(__MINGW32__) || defined(__MINGW64__)
 	#include <windows.h>
@@ -16,38 +16,57 @@ void exitNow(int exitcode)
 }
 #endif
 
-int checkPlugin(const QString& path)
-{
-	QPluginLoader loader(path);
-	qDebug() << "Meta data:" << loader.metaData();
-	qDebug() << "Error:" << loader.errorString();
-	return 0;
-}
-
-// return checkPlugin(fi.absolutePath() + QDir::separator() + "lib" + QDir::separator() + "libsf-tts-piper.so");
+Q_LOGGING_CATEGORY(logCategoryApp, "qt.tts.app", QtMsgType::QtWarningMsg)
 
 int main(int argc, char* argv[])
 {
+	// Set some application information.
+	QCoreApplication::setOrganizationName("Scanframe");
+	QCoreApplication::setOrganizationDomain("scanframe.nl");
+	QCoreApplication::setApplicationName("Qt-Text-To-Speech");
+	// Initialize the application.
 	QApplication app(argc, argv);
+	// Get the 'lib' directory relative to the application.
 	auto path = QDir(QCoreApplication::applicationDirPath()).absoluteFilePath("lib");
-	qDebug() << "Adding:" << path;
+	// Log and add the library path.
+	qCInfo(logCategoryApp) << "Adding library path:" << path;
 	QCoreApplication::addLibraryPath(path);
-	qDebug() << QCoreApplication::libraryPaths();
-	// Initialize the base using the application file path.
-	QFileInfo fi(QCoreApplication::applicationFilePath());
-	// Set the instance to change the extension only.
-	QString fp = QFileInfo(fi.absolutePath()).absolutePath() + QDir::separator() + "config";
-	fi.setFile(fp, fi.completeBaseName() + ".ini");
-	// Create an instance to handle settings.
-	QSettings settings(fi.absoluteFilePath(), QSettings::IniFormat);
+	// Log the total library paths.
+	qCInfo(logCategoryApp) << "Library paths:" << QCoreApplication::libraryPaths();
+	// Get the full application file path.
+	QFileInfo file_info(QCoreApplication::applicationFilePath());
+	// Form the expected settings file directory.
+	QString file_dir = QFileInfo(file_info.absolutePath()).absolutePath() + QDir::separator() + "config";
+	// Add the settings file path.
+	file_info.setFile(file_dir, file_info.completeBaseName() + ".ini");
+	// Declare a self destruct pointer for the settings.
+	std::unique_ptr<QSettings> settings;
+	// Check if the configuration directory exists?
+	if (QFileInfo::exists(file_dir))
+	{
+		// Create an instance to handle settings using the .
+		settings = std::make_unique<QSettings>(file_info.absoluteFilePath(), QSettings::IniFormat);
+	}
+	else
+	{
+		// Form the settings file path in the users home directory for Linux as well as for Windows.
+		settings = std::make_unique<QSettings>(
+			QSettings::IniFormat, QSettings::UserScope,//
+			QCoreApplication::organizationName(), QCoreApplication::applicationName()
+		);
+	}
+	qCInfo(logCategoryApp) << "Using settings from:" << settings->fileName();
 	//
-	auto win = new sf::MainWindow();
-	win->setSettings(settings);
+	auto win = std::make_unique<sf::MainWindow>();
+	win->setSettings(settings.get());
 	win->storeState(false);
 	win->show();
 	auto rv = app.exec();
 	win->storeState(true);
-	delete win;
+	win.release();
+	// Required, otherwise not all is stored.
+	settings->sync();
+	settings.release();
 // MinGW GCC < 13.4 detection for thread_local destructor ordering bug GCC #116159"
 #if (defined(__MINGW32__) || defined(__MINGW64__)) && (__GNUC__ < 13 || (__GNUC__ == 13 && __GNUC_MINOR__ < 4))
 	QThreadPool::globalInstance()->waitForDone();

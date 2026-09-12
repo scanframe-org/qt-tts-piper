@@ -44,16 +44,16 @@ TextToSpeechEngine::TextToSpeechEngine(const QVariantMap& parameters, QObject* p
 	// Set the default locale to the system one not using the QLocale::system() directly since it does not compare well.
 	QLocale sys_locale(QLocale::system().language(), QLocale::system().territory());
 	// Log some information.
-	qCInfo(logCategory) << "System locale:" << sys_locale;
-	qCInfo(logCategory) << "Plugin directory:" << _dirPlugin.path();
-	qCInfo(logCategory) << "Models directory:" << _dirModels.path();
-	qCInfo(logCategory) << "Espeak directory:" << _dirEspeakNgData.path();
-	qCInfo(logCategory) << "Audio Device:" << _audioDevice.description();
+	qCInfo(logCategoryEngine) << "System locale:" << sys_locale;
+	qCInfo(logCategoryEngine) << "Plugin directory:" << _dirPlugin.path();
+	qCInfo(logCategoryEngine) << "Models directory:" << _dirModels.path();
+	qCInfo(logCategoryEngine) << "Espeak directory:" << _dirEspeakNgData.path();
+	qCInfo(logCategoryEngine) << "Audio Device:" << _audioDevice.description();
 	// Initialize available locales and voices by sorting the json-files by name.
 	for (auto& filename: QDir(_dirModels.path()).entryList({"*.json"}, QDir::Files, QDir::Name | QDir::IgnoreCase))
 	{
 		QFileInfo fi(_dirModels, filename);
-		qCInfo(logCategory) << "Processing model:" << fi.baseName();
+		qCInfo(logCategoryEngine) << "Processing model:" << fi.baseName();
 		auto json = readJsonFile(fi.filePath()).object();
 		auto language = json["language"].toObject();
 		auto family = language["family"].toString();
@@ -192,7 +192,7 @@ QLocale TextToSpeechEngine::locale() const
 
 bool TextToSpeechEngine::setLocale(const QLocale& locale)
 {
-	qCDebug(logCategory) << "setLocale:" << locale;
+	qCDebug(logCategoryEngine) << "setLocale:" << locale;
 	// Only perform this if the locale is different from the current one.
 	if (_selected.locale != locale)
 	{
@@ -313,7 +313,7 @@ void TextToSpeechEngine::handleQueued()
 	_playSentry = true;
 	// Play the next buffer queued.
 	_worker.handleQueued([&](TextToSpeechSynthesizer::QueueFlag flag, const QByteArray& buffer) {
-		qCDebug(logCategory) << "Process queued: " << flag << ", Size:" << buffer.size();
+		qCDebug(logCategoryEngine) << "Process queued: " << flag << ", Size:" << buffer.size();
 		if (flag == TextToSpeechSynthesizer::qfPlay)
 			playBuffer(buffer);
 		else
@@ -340,17 +340,17 @@ QAudioSink* TextToSpeechEngine::getAudioSink()
 	if (!_audioDevice.isFormatSupported(_selected.audioFormat))
 	{
 		_audioSink = nullptr;
-		qCWarning(logCategory, "Audio format not supported!");
+		qCWarning(logCategoryEngine, "Audio format not supported!");
 	}
 	else
 	{
 		// Create or recreate audio sink when the format changed.
 		if (!_audioSink || _audioSink->format() != _selected.audioFormat)
 		{
-			qCInfo(logCategory) << "Audio Device id:" << _audioDevice.id();
+			qCInfo(logCategoryEngine) << "Audio Device id:" << _audioDevice.id();
 			// Delete the previous instance when it exists.
 			delete _audioSink;
-			qCInfo(logCategory) << "Creating audio sink:" << _selected.audioFormat << "for device:" << _audioDevice.description();
+			qCInfo(logCategoryEngine) << "Creating audio sink:" << _selected.audioFormat << "for device:" << _audioDevice.description();
 			_audioSink = new QAudioSink(_audioDevice, _selected.audioFormat, this);
 			_audioSink->start(_stream);
 			connect(_audioSink, &QAudioSink::stateChanged, this, &TextToSpeechEngine::AudioSinkStateChange);
@@ -371,12 +371,12 @@ void TextToSpeechEngine::playBuffer(const QByteArray& audio_data)
 		// Start playback by add the buffer data to the audio stream and only when not stopped.
 		if (auto state = as->state(); state != QAudio::State::StoppedState)
 		{
-			qCInfo(logCategory) << "Appending to audio stream, size:" << audio_data.size();
+			qCInfo(logCategoryEngine) << "Appending to audio stream, size:" << audio_data.size();
 			_stream->appendData(audio_data);
 		}
 		else
 		{
-			qCDebug(logCategory) << "Unable to append to audio stream with sink state:" << state;
+			qCDebug(logCategoryEngine) << "Unable to append to audio stream with sink state:" << state;
 		}
 	}
 }

@@ -125,7 +125,7 @@ void TextToSpeechSynthesizer::synthesize()
 				// Sanity check on the required files.
 				if (_voiceDataFile.isEmpty() || _piperEspeakNgData.empty())
 				{
-					qCWarning(logCategory) << "One of the required 'espeak-ng-data' files missing!";
+					qCWarning(logCategoryEngine) << "One of the required 'espeak-ng-data' files missing!";
 					return;
 				}
 				// Initialize the Piper engine.
@@ -140,7 +140,7 @@ void TextToSpeechSynthesizer::synthesize()
 				}
 				catch (const std::exception& e)
 				{
-					qCWarning(logCategory) << "Piper initialize error:" << e.what();
+					qCWarning(logCategoryEngine) << "Piper initialize error:" << e.what();
 					piper_free(_piper);
 					_piper = nullptr;
 				}
@@ -158,7 +158,7 @@ void TextToSpeechSynthesizer::synthesize()
 	// Sanity check.
 	if (!_piper)
 	{
-		qCWarning(logCategory) << "Piper not initialized!";
+		qCWarning(logCategoryEngine) << "Piper not initialized!";
 		return;
 	}
 	//
@@ -175,22 +175,22 @@ void TextToSpeechSynthesizer::synthesize()
 		if (text.second.isEmpty())
 			continue;
 		// Notify the start of synthesis.
-		qCDebug(logCategory) << "To synthesize text:" << text;
+		qCDebug(logCategoryEngine) << "To synthesize text:" << text;
 		// Start synthesizing.
 		int result = piper_synthesize_start(_piper, text.second.toStdString().c_str(), &_options);
 		if (result == PIPER_ERR_GENERIC)
 		{
-			qCWarning(logCategory) << "Piper synthesize error!" << text;
+			qCWarning(logCategoryEngine) << "Piper synthesize error!" << text;
 			break;
 		}
 		piper_audio_chunk chunk;
 		while ((result = piper_synthesize_next(_piper, &chunk)) != PIPER_DONE)
 		{
 			// Report the size of the synthesized chunk.
-			qCDebug(logCategory) << "Synthesized chunk bytes:" << chunk.num_samples * sizeof(sample_t);
+			qCDebug(logCategoryEngine) << "Synthesized chunk bytes:" << chunk.num_samples * sizeof(sample_t);
 			if (result == PIPER_ERR_GENERIC)
 			{
-				qCWarning(logCategory) << "Synthesis next failed!";
+				qCWarning(logCategoryEngine) << "Synthesis next failed!";
 				break;
 			}
 			// Prevent access to the data again.
@@ -218,7 +218,7 @@ bool TextToSpeechSynthesizer::handleQueued(const callback_t& callback)
 		do
 		{
 			auto [flag, buffer](_buffers.dequeue());
-			qCDebug(logCategory) << "Handling buffer:" << _buffers.size() << "Flag:" << flag << ", Size:" << buffer.size();
+			qCDebug(logCategoryEngine) << "Handling buffer:" << _buffers.size() << "Flag:" << flag << ", Size:" << buffer.size();
 			if (flag == qfPlay)
 				callback(qfPlay, buffer);
 			else
