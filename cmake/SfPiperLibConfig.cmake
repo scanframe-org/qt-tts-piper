@@ -27,7 +27,7 @@ include(FetchContent)
 FetchContent_Declare(
 	"piper-v1.6.0"
 	#URL "https://codeload.github.com/Scanframe/piper1-gpl/zip/refs/heads/main"
-	URL https://github.com/Scanframe/piper1-gpl/archive/refs/tags/1.6.0-rc.1.zip
+	URL "https://github.com/Scanframe/piper1-gpl/archive/refs/tags/1.6.0-rc.2.zip"
 	DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 	EXCLUDE_FROM_ALL
 )

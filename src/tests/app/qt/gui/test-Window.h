@@ -38,7 +38,7 @@ class MainWindow : public QMainWindow
 		void selectEngine(int index);
 		void selectLanguage(int language);
 		void selectVoice(int index);
-		void localeChanged(const QLocale &locale);
+		void localeChanged(const QLocale& locale);
 
 	private:
 		void onEngineReady();
@@ -49,8 +49,5 @@ class MainWindow : public QMainWindow
 		QString _audioDeviceId;
 		QList<QVoice> _voices;
 };
-
-
-
 
 }// namespace sf

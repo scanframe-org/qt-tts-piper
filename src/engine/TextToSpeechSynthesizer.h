@@ -104,11 +104,11 @@ class TextToSpeechSynthesizer : public QThread
 		/// Flag set when a (re)load of the voice is needed.
 		int _voiceReload{0};
 		/// Flag set when the thread should terminate.
-		bool _abort{false};
+		std::atomic<bool> _abort{false};
 		/// Holds the piper engine configuration.
 		piper_synthesizer* _piper{nullptr};
 		/// Holds the piper synthesize options.
-		piper_synthesize_options _options{0, 0, 0,0};
+		piper_synthesize_options _options{0, 0, 0, 0};
 		/// Holds espeak_ng_data directory location.
 		std::filesystem::path _piperEspeakNgData;
 		/// Holds the voice model data file.
@@ -118,9 +118,9 @@ class TextToSpeechSynthesizer : public QThread
 		/// Holds the selected speaker id.
 		int _voiceSpeakerId{0};
 		/// Holds the initial length scale of the selected model.
-		float _lengthScale {1.0};
+		float _lengthScale{1.0};
 		/// Holds the rate to modify the length scale with.
-		float _lengthScaleFactor {1.0};
+		float _lengthScaleFactor{1.0};
 };
 
 }// namespace sf

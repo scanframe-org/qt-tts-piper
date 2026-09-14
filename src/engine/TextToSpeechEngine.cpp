@@ -81,7 +81,7 @@ TextToSpeechEngine::TextToSpeechEngine(const QVariantMap& parameters, QObject* p
 	}
 	// Set the default locale to the system one and report when not available.
 	if (!TextToSpeechEngine::setLocale(sys_locale))
-		qWarning() << "Failed to set default locale to system locale!";
+		qCWarning(logCategoryEngine) << "Failed to set default locale to system locale!";
 	// Assign the 'espeak_ng_data' directory location.
 	_worker.setEspeakNgDataDirectory(_dirEspeakNgData.path());
 	// Assign the worker class instance to the new thread.

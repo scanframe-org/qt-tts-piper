@@ -1,7 +1,6 @@
 # Set the target name using the current directory name and the test prefix.
 get_filename_component(SF_PROJECT_SUFFIX ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 
-
 set(TEST_APP_TARGET "${PROJECT_NAME}-${SF_PROJECT_SUFFIX}")
 
 # Build Qt target.
@@ -26,6 +25,8 @@ if (TRUE)
 	target_sources("${TEST_APP_TARGET}" PRIVATE main-qt.cpp "${TEST_APP_SOURCES}")
 	# Add a dependency to the target.
 	add_dependencies("${TEST_APP_TARGET}" espeak-ng-data)
+	# Set version from Git.
+	target_compile_definitions("${TEST_APP_TARGET}" PRIVATE SF_VERSION=${SF_VERSION})
 
 else ()
 
@@ -39,5 +40,7 @@ else ()
 	target_sources("${TEST_APP_TARGET}" PRIVATE main-piper.cpp "${TEST_APP_SOURCES}")
 	# Required for the location of 'libonnxruntime.so'.
 	set_target_properties("${TEST_APP_TARGET}" PROPERTIES INSTALL_RPATH "${CMAKE_INSTALL_RPATH};\${ORIGIN}/lib/texttospeech")
+	# Set version from Git.
+	target_compile_definitions("${TEST_APP_TARGET}" PRIVATE SF_VERSION=${SF_VERSION})
 
 endif ()

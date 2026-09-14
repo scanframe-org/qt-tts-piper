@@ -141,7 +141,7 @@ TEST_CASE("tts-piper-1", "[say]")
 			"Continuing with the third line. "
 			"Finalizing with The fourth line."
 		);
-		//tts->say("Hello Everybody, this is an example text in English.");
+		// tts->say("Hello Everybody, this is an example text in English.");
 		REQUIRE(tts->state() == QTextToSpeech::Speaking);
 		while (tts->state() == QTextToSpeech::Speaking && stopwatch.durationElapsed() < 30s)
 		{
@@ -203,7 +203,8 @@ TEST_CASE("tts-piper-2", "[synth]")
 			REQUIRE(tts->state() == QTextToSpeech::Ready);
 		// Use the synthesize function with a callback lambda function.
 		tts->synthesize(
-			"This text is played externally. This is the second sentence using a separate process step.", [parent](const QAudioFormat& format, const QByteArray& buffer) {
+			"This text is played externally. This is the second sentence using a separate process step.",
+			[parent](const QAudioFormat& format, const QByteArray& buffer) {
 				REQUIRE(format.isValid());
 				REQUIRE(!buffer.isEmpty());
 				qDebug() << "Synthesized data" << format << buffer.size();

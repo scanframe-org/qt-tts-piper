@@ -119,41 +119,42 @@ void TextToSpeechSynthesizer::synthesize()
 	// When a load or reload is required.
 	if (_voiceReload || !_piper)
 	{
-			// Load the voice when larger than zero.
-			if (_voiceReload > 0 || !_piper)
+		// Load the voice when larger than zero.
+		if (_voiceReload > 0 || !_piper)
+		{
+			// Sanity check on the required files.
+			if (_voiceDataFile.isEmpty() || _piperEspeakNgData.empty())
 			{
-				// Sanity check on the required files.
-				if (_voiceDataFile.isEmpty() || _piperEspeakNgData.empty())
-				{
-					qCWarning(logCategoryEngine) << "One of the required 'espeak-ng-data' files missing!";
-					return;
-				}
-				// Initialize the Piper engine.
-				try
-				{
-					_piper = piper_create(_voiceDataFile.toStdString().data(), _voiceJsonFile.toStdString().data(), _piperEspeakNgData.string().data());
-					// Assign the default options.
-					_options = piper_default_synthesize_options(_piper);
-					_lengthScale = _options.length_scale;
-					// Make the deviations from the default be applied.
-					_voiceReload = -1;
-				}
-				catch (const std::exception& e)
-				{
-					qCWarning(logCategoryEngine) << "Piper initialize error:" << e.what();
-					piper_free(_piper);
-					_piper = nullptr;
-				}
+				qCWarning(logCategoryEngine) << "One of the required 'espeak-ng-data' files missing!";
+				_abort = true;
+				return;
 			}
-			if (_voiceReload < 0)
+			// Initialize the Piper engine.
+			try
 			{
-				// Apply the deviations from the default.
-				_options.speaker_id = _voiceSpeakerId;
-				// Apply the rate to the default length scale.
-				_options.length_scale = _lengthScale * _lengthScaleFactor;
+				_piper = piper_create(_voiceDataFile.toStdString().data(), _voiceJsonFile.toStdString().data(), _piperEspeakNgData.string().data());
+				// Assign the default options.
+				_options = piper_default_synthesize_options(_piper);
+				_lengthScale = _options.length_scale;
+				// Make the deviations from the default be applied.
+				_voiceReload = -1;
 			}
-			// Clear the reload flag.
-			_voiceReload = 0;
+			catch (const std::exception& e)
+			{
+				qCWarning(logCategoryEngine) << "Piper initialize error:" << e.what();
+				piper_free(_piper);
+				_piper = nullptr;
+			}
+		}
+		if (_voiceReload < 0)
+		{
+			// Apply the deviations from the default.
+			_options.speaker_id = _voiceSpeakerId;
+			// Apply the rate to the default length scale.
+			_options.length_scale = _lengthScale * _lengthScaleFactor;
+		}
+		// Clear the reload flag.
+		_voiceReload = 0;
 	}
 	// Sanity check.
 	if (!_piper)

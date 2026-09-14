@@ -18,6 +18,9 @@ Sf_ReportGitTagVersion("${_Versions}")
 list(GET _Versions 0 SF_GIT_TAG_VERSION)
 list(GET _Versions 1 SF_GIT_TAG_RC)
 list(GET _Versions 2 SF_GIT_TAG_COMMITS)
+# Convert the versions list to a string.
+Sf_VersionToString(SF_VERSION "${_Versions}")
+
 
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
 
@@ -88,30 +91,35 @@ if (SF_BUILD_TESTING)
 	sfDownloadPiperModels(DEFAULT)
 endif ()
 
-file(GLOB _Files "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/texttospeech/libonnxruntime.*")
-install(FILES
-	${_Files}
-	DESTINATION "lib/texttospeech/"
-	COMPONENT "${SF_DEFAULT_COMPONENT_NAME}"
-)
+# Windows 11 need onnxruntime library next to the executable since itself has an older version present.
+if (WIN32)
+	file(GLOB _Files "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/onnxruntime.*")
+else ()
+	file(GLOB _Files "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/texttospeech/libonnxruntime.*")
+endif ()
+list(LENGTH _Files _FilesLength)
+if (_FilesLength EQUAL 0)
+	message(SEND_ERROR "Need onnxruntime library to be present in the build directory.")
+else ()
+	if (WIN32)
+		install(FILES ${_Files} DESTINATION "." COMPONENT "${SF_DEFAULT_COMPONENT_NAME}")
+	else ()
+		install(FILES ${_Files} DESTINATION "lib/texttospeech/" COMPONENT "${SF_DEFAULT_COMPONENT_NAME}")
+	endif ()
+endif ()
 # Get the real path of the models directory since it is a symlink (development only to save space).
 get_filename_component(_ModelsDir "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/texttospeech/models/" REALPATH)
 # Install the models files.
-install(DIRECTORY
-	"${_ModelsDir}"
-	DESTINATION "lib/texttospeech"
-	COMPONENT "${SF_DEFAULT_COMPONENT_NAME}"
-)
+install(DIRECTORY "${_ModelsDir}" DESTINATION "lib/texttospeech" COMPONENT "${SF_DEFAULT_COMPONENT_NAME}")
 # Install the espeak-ng data files.
-install(DIRECTORY
-	"${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/texttospeech/espeak-ng-data"
-	DESTINATION "lib/texttospeech"
-	COMPONENT "${SF_DEFAULT_COMPONENT_NAME}"
-)
+install(DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/texttospeech/espeak-ng-data"
+	DESTINATION "lib/texttospeech" COMPONENT "${SF_DEFAULT_COMPONENT_NAME}")
 # Install the TTS plugin.
 install(TARGETS "sf-tts-piper"
-	COMPONENT "${SF_DEFAULT_COMPONENT_NAME}"
-	RUNTIME DESTINATION . COMPONENT "${SF_DEFAULT_COMPONENT_NAME}"
+	# Windows uses the runtime destination to install the plugin.
+	# Linux uses the library destination to install the plugin.
+	# The plugin is installed in the 'lib/texttospeech' directory.
+	RUNTIME DESTINATION "lib/texttospeech" COMPONENT "${SF_DEFAULT_COMPONENT_NAME}"
 	LIBRARY DESTINATION "lib/texttospeech" COMPONENT "${SF_DEFAULT_COMPONENT_NAME}"
 )
 

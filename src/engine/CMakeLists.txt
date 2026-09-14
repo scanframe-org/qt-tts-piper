@@ -20,17 +20,12 @@ set(CMAKE_AUTORCC ON)
 Sf_AddTarget("${_TargetName}" SHARED FLAGS doc VERSION EXIF SUFFIX COVERAGE)
 
 # Set the correct plugin directory.
+get_target_property(_LibOutDir "${_TargetName}" LIBRARY_OUTPUT_DIRECTORY)
+set_target_properties("${_TargetName}" PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${_LibOutDir}/texttospeech")
 if (WIN32)
-	get_target_property(_LibOutDir "${_TargetName}" RUNTIME_OUTPUT_DIRECTORY)
-else ()
-	get_target_property(_LibOutDir "${_TargetName}" LIBRARY_OUTPUT_DIRECTORY)
-endif ()
-set(_LibOutDir "${_LibOutDir}/texttospeech")
-if (WIN32)
-	set_target_properties("${_TargetName}" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${_LibOutDir}")
-else ()
-	set_target_properties("${_TargetName}" PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${_LibOutDir}")
-endif ()
+	# Needed for WIN32 build to copy the plugin to the correct directory.
+	set_target_properties("${_TargetName}" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${_LibOutDir}/texttospeech")
+endif()
 
 target_sources(${_TargetName} PRIVATE
 	TextToSpeechSynthesizer.cpp TextToSpeechSynthesizer.h

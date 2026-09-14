@@ -20,8 +20,7 @@ void exitNow(int exitcode)
 }
 #endif
 
-
-Q_LOGGING_CATEGORY(logApp, "qt.app", QtMsgType::QtWarningMsg)
+Q_LOGGING_CATEGORY(logApp, "qt.tts.app", QtMsgType::QtWarningMsg)
 
 #ifdef _MSC_VER
 	#define PACKED_STRUCT(name) __pragma(pack(push, 1)) struct name
@@ -33,7 +32,6 @@ Q_LOGGING_CATEGORY(logApp, "qt.app", QtMsgType::QtWarningMsg)
 	#define PACKED_STRUCT(name) struct name
 	#define PACKED_STRUCT_END
 #endif
-
 
 PACKED_STRUCT(WavHeader)
 {
@@ -111,7 +109,7 @@ void playBuffer(const QByteArray& data, const QAudioFormat& format, QObject* par
 	conn = QObject::connect(sink, &QAudioSink::stateChanged, [&loop, &conn, sink, buffer](QAudio::State state) {
 		if (state == QAudio::IdleState)
 		{
-			QObject::disconnect(conn); // prevent re-entry from stop() emitting StoppedState
+			QObject::disconnect(conn);// prevent re-entry from stop() emitting StoppedState
 			sink->stop();
 			buffer->close();
 			sink->deleteLater();
@@ -125,17 +123,33 @@ void playBuffer(const QByteArray& data, const QAudioFormat& format, QObject* par
 	loop.exec();
 }
 
+#define _STRINGIFY_(x) #x
+#define _TOSTRING_(x) _STRINGIFY_(x)
+
+QString getVersion()
+{
+	return QString(_TOSTRING_(SF_VERSION));
+}
+
 int main(int argc, char* argv[])
 {
+	// Use the alternative env var since Wine does not propagate 'QT_' prefixed vars.
+	if (qEnvironmentVariableIsSet("SF_QT_LOGGING_RULES"))
+	{
+		QString rules = qEnvironmentVariable("SF_QT_LOGGING_RULES");
+		rules.replace(QLatin1Char(';'), QLatin1Char('\n'));
+		QLoggingCategory::setFilterRules(rules);
+	}
 	// The environment variable has precedence.
-	if (qEnvironmentVariableIsEmpty("QT_LOGGING_RULES"))
+	else if (qEnvironmentVariableIsEmpty("QT_LOGGING_RULES"))
 		QLoggingCategory::setFilterRules("qt.multimedia.ffmpeg=false");
+	//
 	QPointer app(new QCoreApplication(argc, argv));
-	QCoreApplication::setApplicationName("CLI QTextToSpeech");
-	QCoreApplication::setApplicationVersion("1.0");
+	QCoreApplication::setApplicationName("Text-To-Speech Qt-Plugin CLI Tester");
+	QCoreApplication::setApplicationVersion(getVersion());
 	// Initialize the parser.
 	QCommandLineParser parser;
-	parser.setApplicationDescription("A simple Qt6 command-line parser example.");
+	parser.setApplicationDescription(QCoreApplication::applicationName() + ' ' + QCoreApplication::applicationVersion());
 	// Add default help and version options (-h, --help and -v, --version).
 	parser.addHelpOption();
 	parser.addVersionOption();
@@ -165,7 +179,7 @@ int main(int argc, char* argv[])
 	auto path = QDir(QCoreApplication::applicationDirPath()).absoluteFilePath("lib");
 	qCInfo(logApp) << "Adding library path:" << path;
 	QCoreApplication::addLibraryPath(path);
-	qCInfo(logApp) << QCoreApplication::libraryPaths();
+	qCInfo(logApp) << QCoreApplication::libraryPaths().join(QLatin1Char('\n'));
 	// Create a default one when 'engine' is not specified or the specified named engine.
 	// ReSharper disable once CppDFAMemoryLeak
 	QPointer tts(new QTextToSpeech(parser.value(opt_engine), app.get()));
@@ -183,7 +197,7 @@ int main(int argc, char* argv[])
 	// Set the voice when found.
 	if (!parser.value(opt_voice).isEmpty())
 	{
-		for (auto& voice : tts->availableVoices())
+		for (auto& voice: tts->availableVoices())
 		{
 			auto voice_name = parser.value(opt_voice);
 			if (voice.name() == voice_name)
@@ -198,11 +212,12 @@ int main(int argc, char* argv[])
 		qInfo().noquote() << "Available Engines:" << tts->availableEngines().join(", ");
 		qInfo().noquote() << "Current Engine:" << tts->engine();
 		QStringList locales;
-		for (auto& locale :tts->availableLocales())
+		for (auto& locale: tts->availableLocales())
 			locales << locale.name();
 		qInfo().noquote() << QString("%1 Locales:").arg(tts->engine()) << locales.join(", ");
-		for (auto& voice :tts->availableVoices())
-			qInfo().noquote() << QString("%1 Voice:").arg(tts->engine()) << voice.name() << voice.locale().name() << QVoice::genderName(voice.gender()) << QVoice::ageName(voice.age());
+		for (auto& voice: tts->availableVoices())
+			qInfo().noquote() << QString("%1 Voice:").arg(tts->engine()) << voice.name() << voice.locale().name() << QVoice::genderName(voice.gender())
+												<< QVoice::ageName(voice.age());
 		qInfo().noquote() << "Speech rate:" << tts->rate();
 	}
 	// Check for appropriate engine capabilities.

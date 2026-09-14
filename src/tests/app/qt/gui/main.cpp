@@ -18,14 +18,32 @@ void exitNow(int exitcode)
 
 Q_LOGGING_CATEGORY(logCategoryApp, "qt.tts.app", QtMsgType::QtWarningMsg)
 
+#define _STRINGIFY_(x) #x
+#define _TOSTRING_(x) _STRINGIFY_(x)
+
+QString getVersion()
+{
+	return QString(_TOSTRING_(SF_VERSION));
+}
+
 int main(int argc, char* argv[])
 {
+	// Use the alternative env var since Wine does not propagate 'QT_' prefixed vars.
+	if (qEnvironmentVariableIsSet("SF_QT_LOGGING_RULES"))
+	{
+		QString rules = qEnvironmentVariable("SF_QT_LOGGING_RULES");
+		rules.replace(QLatin1Char(';'), QLatin1Char('\n'));
+		QLoggingCategory::setFilterRules(rules);
+	}
 	// Set some application information.
 	QCoreApplication::setOrganizationName("Scanframe");
 	QCoreApplication::setOrganizationDomain("scanframe.nl");
 	QCoreApplication::setApplicationName("Qt-Text-To-Speech");
 	// Initialize the application.
 	QApplication app(argc, argv);
+#ifdef WIN32
+	app.setStyle("Fusion");
+#endif
 	// Get the 'lib' directory relative to the application.
 	auto path = QDir(QCoreApplication::applicationDirPath()).absoluteFilePath("lib");
 	// Log and add the library path.
@@ -58,6 +76,8 @@ int main(int argc, char* argv[])
 	qCInfo(logCategoryApp) << "Using settings from:" << settings->fileName();
 	//
 	auto win = std::make_unique<sf::MainWindow>();
+	win->setWindowIcon(QIcon(":/icons/main"));
+	win->setWindowTitle(win->windowTitle() + ' ' + getVersion());
 	win->setSettings(settings.get());
 	win->storeState(false);
 	win->show();

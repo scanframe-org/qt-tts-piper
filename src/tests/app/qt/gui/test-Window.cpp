@@ -194,7 +194,7 @@ void MainWindow::selectEngine(int index)
 	// Delete the previous TTS engine when it is present at all.
 	delete _tts;
 	// Report that the engine is created.
-	qCInfo(logCategoryApp) << "Creating TTS engine:" << (engine.isEmpty() ? QString("Default") : engine) << //
+	qCInfo(logCategoryApp) << "Creating TTS engine:" << (engine.isEmpty() ? QString("Default") : engine) <<//
 		", Audio device id:" << (_audioDeviceId.isEmpty() ? QString("Default") : _audioDeviceId);
 	_tts = new QTextToSpeech(engine, {{"audioDeviceId", _audioDeviceId}}, this);
 	_tts->setProperty("audioDeviceId", _audioDeviceId);

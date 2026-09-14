@@ -134,18 +134,20 @@ class TextToSpeechEngine : public QTextToSpeechEngine
 		QDir _dirModels;
 		/// Holds the directory location of 'espeak_ng_data'.
 		QDir _dirEspeakNgData;
+
 		/// Holds the selected locale, voice, volume, and audio format.
 		struct
 		{
-			/// Holds the selected locale.
-			QLocale locale{};
-			/// Holds the selected voice index where -1 is not selected.
-			int voice{-1};
-			/// Holds the audio format.
-			QAudioFormat audioFormat{};
-			/// Holds the volume set.
-			double volume{1.0};
+				/// Holds the selected locale.
+				QLocale locale{};
+				/// Holds the selected voice index where -1 is not selected.
+				int voice{-1};
+				/// Holds the audio format.
+				QAudioFormat audioFormat{};
+				/// Holds the volume set.
+				double volume{1.0};
 		} _selected;
+
 		/// Holds the list of available locales.
 		QList<QLocale> _locales;
 		/// Holds the list of available voices.

@@ -17,12 +17,17 @@ set(CMAKE_AUTORCC ON)
 file(GLOB TEST_APP_SOURCES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "test-*")
 
 # Add shared library and also sets the executable version.
-Sf_AddTarget("${TEST_APP_TARGET}" FLAGS pack VERSION EXIF SUFFIX)
+Sf_AddTarget("${TEST_APP_TARGET}" FLAGS pack gui VERSION EXIF SUFFIX)
 
-target_sources("${TEST_APP_TARGET}" PRIVATE main.cpp "${TEST_APP_SOURCES}")
+target_sources("${TEST_APP_TARGET}"
+	PRIVATE
+	main.cpp
+	"${TEST_APP_SOURCES}"
+)
 
+# Set version from Git.
+target_compile_definitions("${TEST_APP_TARGET}" PRIVATE SF_VERSION=${SF_VERSION})
 # Add a dependency to the target.
 add_dependencies("${TEST_APP_TARGET}" espeak-ng-data)
-
 # Should be linked to the main library.
 target_link_libraries("${TEST_APP_TARGET}" PRIVATE Qt::Gui Qt::Widgets Qt::TextToSpeech)
