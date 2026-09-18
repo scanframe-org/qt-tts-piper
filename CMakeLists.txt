@@ -58,6 +58,15 @@ if (WIN32)
 	endif ()
 endif ()
 
+# Add the message log context for debug builds so %{function}, %{file} and %{line} are available in the log.
+# It can be specified by environment variable:
+#   QT_MESSAGE_PATTERN="%{if-category}%{category}: %{endif}%{function}: %{message}"
+# And not to forget by categorized log entry and rules:
+#   QT_LOGGING_RULES=qt.tts.*=true
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+	add_compile_definitions(QT_MESSAGELOGCONTEXT)
+endif()
+
 # Make sure builds do not wind up in the source directory.
 find_package(SfMacros CONFIG REQUIRED)
 # Make sure builds do not wind up in the source directory.

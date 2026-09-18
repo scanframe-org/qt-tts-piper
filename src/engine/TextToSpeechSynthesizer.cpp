@@ -92,6 +92,7 @@ void TextToSpeechSynthesizer::trigger()
 
 void TextToSpeechSynthesizer::add(QueueFlag flag, const QString& text)
 {
+	qCDebug(logCategoryEngine) << "Queuing text:" << text << " with flag:" << flag;
 	QMutexLocker locker(&_mutexData);
 	// When requesting synthesizing, clear the queued text and buffers.
 	if (flag > qfSend)
@@ -176,7 +177,7 @@ void TextToSpeechSynthesizer::synthesize()
 		if (text.second.isEmpty())
 			continue;
 		// Notify the start of synthesis.
-		qCDebug(logCategoryEngine) << "To synthesize text:" << text;
+		qCDebug(logCategoryEngine) << "Start synthesizing:" << text;
 		// Start synthesizing.
 		int result = piper_synthesize_start(_piper, text.second.toStdString().c_str(), &_options);
 		if (result == PIPER_ERR_GENERIC)

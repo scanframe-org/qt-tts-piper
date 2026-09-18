@@ -42,7 +42,11 @@ TextToSpeechEngine::TextToSpeechEngine(const QVariantMap& parameters, QObject* p
 			}
 	}
 	// Set the default locale to the system one not using the QLocale::system() directly since it does not compare well.
+#ifdef WIN32
+	QLocale sys_locale;
+#else
 	QLocale sys_locale(QLocale::system().language(), QLocale::system().territory());
+#endif
 	// Log some information.
 	qCInfo(logCategoryEngine) << "System locale:" << sys_locale;
 	qCInfo(logCategoryEngine) << "Plugin directory:" << _dirPlugin.path();
@@ -79,9 +83,9 @@ TextToSpeechEngine::TextToSpeechEngine(const QVariantMap& parameters, QObject* p
 			_voices.append(voice);
 		}
 	}
-	// Set the default locale to the system one and report when not available.
+	// Set the default locale to the system one and report when it fails.
 	if (!TextToSpeechEngine::setLocale(sys_locale))
-		qCWarning(logCategoryEngine) << "Failed to set default locale to system locale!";
+		qCWarning(logCategoryEngine) << QString("Failed to set default locale to system locale '%1' !").arg(sys_locale.name());
 	// Assign the 'espeak_ng_data' directory location.
 	_worker.setEspeakNgDataDirectory(_dirEspeakNgData.path());
 	// Assign the worker class instance to the new thread.
@@ -114,6 +118,7 @@ QList<QVoice> TextToSpeechEngine::availableVoices() const
 
 void TextToSpeechEngine::say(const QString& text)
 {
+	qCDebug(logCategoryEngine) << "Say:" << text;
 	// When an empty text is given or no voice is selected, bailout.
 	if (text.isEmpty())
 		return;
@@ -126,6 +131,7 @@ void TextToSpeechEngine::say(const QString& text)
 
 void TextToSpeechEngine::synthesize(const QString& text)
 {
+	qCDebug(logCategoryEngine) << "Synthesize:" << text;
 	// Synthesize to audio data without playing.
 	// When The state is 'Ready' set it 'Synthesizing' instantly to reflect the actual state.
 	if (_state == QTextToSpeech::Ready)

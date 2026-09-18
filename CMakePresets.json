@@ -857,7 +857,6 @@
 			"packageDirectory": "/tmp/$env{USER}-cpack/gw",
 			"generators": [
 				"ZIP",
-				"TGZ",
 				"NSIS64"
 			]
 		},

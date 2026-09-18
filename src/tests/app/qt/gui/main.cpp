@@ -35,6 +35,11 @@ int main(int argc, char* argv[])
 		rules.replace(QLatin1Char(';'), QLatin1Char('\n'));
 		QLoggingCategory::setFilterRules(rules);
 	}
+	// Use the alternative env var since Wine does not propagate 'QT_' prefixed vars.
+	if (qEnvironmentVariableIsSet("SF_QT_LOGGING_RULES"))
+	{
+		qSetMessagePattern(qEnvironmentVariable("SF_QT_MESSAGE_PATTERN"));
+	}
 	// Set some application information.
 	QCoreApplication::setOrganizationName("Scanframe");
 	QCoreApplication::setOrganizationDomain("scanframe.nl");
