@@ -66,4 +66,8 @@ Key points:
 
 ## Commit Style
 
-Conventional commits are preferred as described in file ['cmake/lib/doc/semantic-versioning.md'](cmake/lib/doc/semantic-versioning.md).
+Conventional commits are described in the document '[semantic-versioning.md](cmake/lib/doc/semantic-versioning.md)'.
+
+### Code Reviewing
+
+For reviewing look at document [reviewer-doc.md](cmake/lib/doc/reviewer-doc.md "Convention for reviewing documentation.")

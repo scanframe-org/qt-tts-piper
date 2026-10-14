@@ -20,6 +20,18 @@ void exitNow(int exitcode)
 
 int main(int argc, char* argv[])
 {
+	// Use the alternative env var since Wine does not propagate 'QT_' prefixed vars.
+	if (qEnvironmentVariableIsSet("SF_QT_LOGGING_RULES"))
+	{
+		QString rules = qEnvironmentVariable("SF_QT_LOGGING_RULES");
+		rules.replace(QLatin1Char(';'), QLatin1Char('\n'));
+		QLoggingCategory::setFilterRules(rules);
+	}
+	// Use the alternative env var since Wine does not propagate 'QT_' prefixed vars.
+	if (qEnvironmentVariableIsSet("SF_QT_LOGGING_RULES"))
+	{
+		qSetMessagePattern(qEnvironmentVariable("SF_QT_MESSAGE_PATTERN"));
+	}
 	QSharedPointer<QCoreApplication> app(new QCoreApplication(argc, argv));
 	auto path = QDir(QCoreApplication::applicationDirPath()).absoluteFilePath("lib");
 	qInfo() << "Adding library path:" << path;

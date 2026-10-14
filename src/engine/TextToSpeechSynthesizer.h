@@ -20,15 +20,18 @@ class TextToSpeechSynthesizer : public QThread
 		typedef float sample_t;
 
 		/// @brief Queue flag for controlling the synthesis process.
-		enum QueueFlag
+		enum class QueueFlag : int
 		{
+			/// The synthesis has been aborted.
+			qfAborted = 0,
 			/// Play the buffer on the audio device.
-			qfPlay,
+			qfPlay = 1,
 			/// Send the buffer to the caller as this is the not last one.
-			qfSend,
+			qfSend = 2,
 			/// Send the buffer to the caller and signal that this is the last one.
-			qfSendEnd
+			qfSendEnd = 3
 		};
+		Q_ENUM(QueueFlag)
 
 		/// @brief Callback type for playing the buffer.
 		typedef std::function<void(QueueFlag, const QByteArray&)> callback_t;
@@ -100,15 +103,16 @@ class TextToSpeechSynthesizer : public QThread
 		/// List of texts to synthesize and speak.
 		QQueue<QPair<QueueFlag, QString>> _queueText;
 		/// Buffers synthesized and ready to be played.
-		QQueue<QPair<QueueFlag, QByteArray>> _buffers;
+		typedef QPair<QueueFlag, QByteArray> buffer_entry_t;
+		QQueue<buffer_entry_t> _buffers;
 		/// Flag set when a (re)load of the voice is needed.
 		int _voiceReload{0};
 		/// Flag set when the thread should terminate.
-		bool _abort{false};
+		std::atomic<bool> _abort{false};
 		/// Holds the piper engine configuration.
 		piper_synthesizer* _piper{nullptr};
 		/// Holds the piper synthesize options.
-		piper_synthesize_options _options{0, 0, 0,0};
+		piper_synthesize_options _options{0, 0, 0, 0};
 		/// Holds espeak_ng_data directory location.
 		std::filesystem::path _piperEspeakNgData;
 		/// Holds the voice model data file.
@@ -118,9 +122,9 @@ class TextToSpeechSynthesizer : public QThread
 		/// Holds the selected speaker id.
 		int _voiceSpeakerId{0};
 		/// Holds the initial length scale of the selected model.
-		float _lengthScale {1.0};
+		float _lengthScale{1.0};
 		/// Holds the rate to modify the length scale with.
-		float _lengthScaleFactor {1.0};
+		float _lengthScaleFactor{1.0};
 };
 
 }// namespace sf

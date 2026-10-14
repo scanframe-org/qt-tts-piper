@@ -28,7 +28,7 @@ class MainWindow : public QMainWindow
 		 */
 		~MainWindow() override;
 
-		void setSettings(QSettings& settings);
+		void setSettings(QSettings* settings);
 		void storeState(bool save, bool text_only = false);
 		void setRate(int);
 		void setPitch(int);
@@ -38,7 +38,7 @@ class MainWindow : public QMainWindow
 		void selectEngine(int index);
 		void selectLanguage(int language);
 		void selectVoice(int index);
-		void localeChanged(const QLocale &locale);
+		void localeChanged(const QLocale& locale);
 
 	private:
 		void onEngineReady();
@@ -49,8 +49,5 @@ class MainWindow : public QMainWindow
 		QString _audioDeviceId;
 		QList<QVoice> _voices;
 };
-
-
-
 
 }// namespace sf

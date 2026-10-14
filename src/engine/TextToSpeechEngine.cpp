@@ -22,7 +22,7 @@ TextToSpeechEngine::TextToSpeechEngine(const QVariantMap& parameters, QObject* p
 	, _dirPlugin(getLibraryPath().parent_path())
 	, _dirModels(getLibraryPath().parent_path().append("models"))
 	, _dirEspeakNgData(getLibraryPath().parent_path().append("espeak-ng-data"))
-	, _mediaDevices()
+	, _mediaDevices(this)
 	, _audioDevice(_mediaDevices.defaultAudioOutput())
 	, _audioSink(nullptr)
 	, _stream(new AudioStream(this))
@@ -30,6 +30,9 @@ TextToSpeechEngine::TextToSpeechEngine(const QVariantMap& parameters, QObject* p
 {
 	// Name the worker thread for debugging.
 	_worker.setObjectName(staticMetaObject.className());
+	//
+	if (_mediaDevices.audioOutputs().size() == 0)
+		qDebug() << "No output media devices available!";
 	// Check if a general parameter provides a different audio device by id.
 	if (auto param_name = u"audioDeviceId"_s; parameters.contains(param_name))
 	{
@@ -41,19 +44,25 @@ TextToSpeechEngine::TextToSpeechEngine(const QVariantMap& parameters, QObject* p
 				break;
 			}
 	}
+	if (_audioDevice.isNull())
+		qDebug() << "Audio device not set!";
 	// Set the default locale to the system one not using the QLocale::system() directly since it does not compare well.
+#ifdef WIN32
+	QLocale sys_locale;
+#else
 	QLocale sys_locale(QLocale::system().language(), QLocale::system().territory());
+#endif
 	// Log some information.
-	qCInfo(logCategory) << "System locale:" << sys_locale;
-	qCInfo(logCategory) << "Plugin directory:" << _dirPlugin.path();
-	qCInfo(logCategory) << "Models directory:" << _dirModels.path();
-	qCInfo(logCategory) << "Espeak directory:" << _dirEspeakNgData.path();
-	qCInfo(logCategory) << "Audio Device:" << _audioDevice.description();
+	qCInfo(logCategoryEngine) << "System locale:" << sys_locale;
+	qCInfo(logCategoryEngine) << "Plugin directory:" << _dirPlugin.path();
+	qCInfo(logCategoryEngine) << "Models directory:" << _dirModels.path();
+	qCInfo(logCategoryEngine) << "Espeak directory:" << _dirEspeakNgData.path();
+	qCInfo(logCategoryEngine) << "Audio Device:" << _audioDevice.description();
 	// Initialize available locales and voices by sorting the json-files by name.
 	for (auto& filename: QDir(_dirModels.path()).entryList({"*.json"}, QDir::Files, QDir::Name | QDir::IgnoreCase))
 	{
 		QFileInfo fi(_dirModels, filename);
-		qCInfo(logCategory) << "Processing model:" << fi.baseName();
+		qCInfo(logCategoryEngine) << "Processing model:" << fi.baseName();
 		auto json = readJsonFile(fi.filePath()).object();
 		auto language = json["language"].toObject();
 		auto family = language["family"].toString();
@@ -69,7 +78,7 @@ TextToSpeechEngine::TextToSpeechEngine(const QVariantMap& parameters, QObject* p
 		{
 			auto [model_name, gender] = getModelGenderFromFilename(fi.completeBaseName(), i);
 			if (speakers > 1)
-				model_name.append(u" [%1]"_s.arg(i));
+				model_name.append(u"_%1"_s.arg(i));
 			auto voice = createVoice(
 				model_name, loc, gender, QVoice::Age::Adult,//
 				QVariant::fromValue(FileSpeaker(fi.completeBaseName(), i))
@@ -79,9 +88,9 @@ TextToSpeechEngine::TextToSpeechEngine(const QVariantMap& parameters, QObject* p
 			_voices.append(voice);
 		}
 	}
-	// Set the default locale to the system one and report when not available.
+	// Set the default locale to the system one and report when it fails.
 	if (!TextToSpeechEngine::setLocale(sys_locale))
-		qWarning() << "Failed to set default locale to system locale!";
+		qCWarning(logCategoryEngine) << QString("Failed to set default locale to system locale '%1' !").arg(sys_locale.name());
 	// Assign the 'espeak_ng_data' directory location.
 	_worker.setEspeakNgDataDirectory(_dirEspeakNgData.path());
 	// Assign the worker class instance to the new thread.
@@ -114,6 +123,7 @@ QList<QVoice> TextToSpeechEngine::availableVoices() const
 
 void TextToSpeechEngine::say(const QString& text)
 {
+	qCDebug(logCategoryEngine) << "Say:" << text;
 	// When an empty text is given or no voice is selected, bailout.
 	if (text.isEmpty())
 		return;
@@ -121,17 +131,18 @@ void TextToSpeechEngine::say(const QString& text)
 	if (_state == QTextToSpeech::Ready)
 		updateState(QTextToSpeech::Speaking);
 	// Split the spoken text into sentences.
-	_worker.add(TextToSpeechSynthesizer::qfPlay, text);
+	_worker.add(TextToSpeechSynthesizer::QueueFlag::qfPlay, text);
 }
 
 void TextToSpeechEngine::synthesize(const QString& text)
 {
+	qCDebug(logCategoryEngine) << "Synthesize:" << text;
 	// Synthesize to audio data without playing.
 	// When The state is 'Ready' set it 'Synthesizing' instantly to reflect the actual state.
 	if (_state == QTextToSpeech::Ready)
 		updateState(QTextToSpeech::Synthesizing);
 	// Split the to be synthesized text into sentences.
-	_worker.add(TextToSpeechSynthesizer::qfSend, text);
+	_worker.add(TextToSpeechSynthesizer::QueueFlag::qfSend, text);
 }
 
 void TextToSpeechEngine::stop(QTextToSpeech::BoundaryHint boundaryHint)
@@ -192,7 +203,7 @@ QLocale TextToSpeechEngine::locale() const
 
 bool TextToSpeechEngine::setLocale(const QLocale& locale)
 {
-	qCDebug(logCategory) << "setLocale:" << locale;
+	qCDebug(logCategoryEngine) << "setLocale:" << locale;
 	// Only perform this if the locale is different from the current one.
 	if (_selected.locale != locale)
 	{
@@ -313,13 +324,14 @@ void TextToSpeechEngine::handleQueued()
 	_playSentry = true;
 	// Play the next buffer queued.
 	_worker.handleQueued([&](TextToSpeechSynthesizer::QueueFlag flag, const QByteArray& buffer) {
-		qCDebug(logCategory) << "Process queued: " << flag << ", Size:" << buffer.size();
-		if (flag == TextToSpeechSynthesizer::qfPlay)
+		qCDebug(logCategoryEngine) << "Process queued: " << QMetaEnum::fromType<TextToSpeechSynthesizer::QueueFlag>().valueToKey(static_cast<quint64>(flag))
+															 << ", Size:" << buffer.size();
+		if (flag == TextToSpeechSynthesizer::QueueFlag::qfPlay)
 			playBuffer(buffer);
 		else
 		{
 			sendBuffer(buffer);
-			if (flag == TextToSpeechSynthesizer::qfSendEnd)
+			if (flag == TextToSpeechSynthesizer::QueueFlag::qfSendEnd)
 				updateState(QTextToSpeech::Ready);
 		}
 	});
@@ -340,17 +352,17 @@ QAudioSink* TextToSpeechEngine::getAudioSink()
 	if (!_audioDevice.isFormatSupported(_selected.audioFormat))
 	{
 		_audioSink = nullptr;
-		qCWarning(logCategory, "Audio format not supported!");
+		qCWarning(logCategoryEngine) << "Audio format" << _selected.audioFormat << " not supported!";
 	}
 	else
 	{
 		// Create or recreate audio sink when the format changed.
 		if (!_audioSink || _audioSink->format() != _selected.audioFormat)
 		{
-			qCInfo(logCategory) << "Audio Device id:" << _audioDevice.id();
+			qCInfo(logCategoryEngine) << "Audio Device id:" << _audioDevice.id();
 			// Delete the previous instance when it exists.
 			delete _audioSink;
-			qCInfo(logCategory) << "Creating audio sink:" << _selected.audioFormat << "for device:" << _audioDevice.description();
+			qCInfo(logCategoryEngine) << "Creating audio sink:" << _selected.audioFormat << "for device:" << _audioDevice.description();
 			_audioSink = new QAudioSink(_audioDevice, _selected.audioFormat, this);
 			_audioSink->start(_stream);
 			connect(_audioSink, &QAudioSink::stateChanged, this, &TextToSpeechEngine::AudioSinkStateChange);
@@ -371,12 +383,12 @@ void TextToSpeechEngine::playBuffer(const QByteArray& audio_data)
 		// Start playback by add the buffer data to the audio stream and only when not stopped.
 		if (auto state = as->state(); state != QAudio::State::StoppedState)
 		{
-			qCInfo(logCategory) << "Appending to audio stream, size:" << audio_data.size();
+			qCInfo(logCategoryEngine) << "Appending to audio stream, size:" << audio_data.size();
 			_stream->appendData(audio_data);
 		}
 		else
 		{
-			qCDebug(logCategory) << "Unable to append to audio stream with sink state:" << state;
+			qCDebug(logCategoryEngine) << "Unable to append to audio stream with sink state:" << state;
 		}
 	}
 }

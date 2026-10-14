@@ -1,27 +1,25 @@
 #include <QLoggingCategory>
-#include <QAudioSink>
 #include <QPointer>
 #include <QThreadPool>
-#include <QTextToSpeech>
 #include <QDir>
 #include <QSettings>
 #include <QCommandLineParser>
 #include <QFile>
-#include <QBuffer>
 #include <QTimer>
+#include <QTextToSpeech>
+#include "test-AudioPlayer.h"
+
+Q_LOGGING_CATEGORY(logApp, "qt.tts.app", QtMsgType::QtWarningMsg)
 
 #if (defined(__MINGW32__) || defined(__MINGW64__)) && (__GNUC__ < 13 || (__GNUC__ == 13 && __GNUC_MINOR__ < 4))
 	#include <windows.h>
 
 void exitNow(int exitcode)
 {
-	qInfo() << "Terminating abnormally due to bug GCC #116159";
+	qCInfo(logApp) << "Terminating abnormally due to bug GCC #116159";
 	TerminateProcess(GetCurrentProcess(), exitcode);
 }
 #endif
-
-
-Q_LOGGING_CATEGORY(logApp, "qt.app", QtMsgType::QtWarningMsg)
 
 #ifdef _MSC_VER
 	#define PACKED_STRUCT(name) __pragma(pack(push, 1)) struct name
@@ -33,7 +31,6 @@ Q_LOGGING_CATEGORY(logApp, "qt.app", QtMsgType::QtWarningMsg)
 	#define PACKED_STRUCT(name) struct name
 	#define PACKED_STRUCT_END
 #endif
-
 
 PACKED_STRUCT(WavHeader)
 {
@@ -97,6 +94,14 @@ bool saveWav(const QString& fileName, const QAudioFormat& format, const QByteArr
 	return true;
 }
 
+#define _STRINGIFY_(x) #x
+#define _TOSTRING_(x) _STRINGIFY_(x)
+
+QString getVersion()
+{
+	return QString(_TOSTRING_(SF_VERSION));
+}
+
 void playBuffer(const QByteArray& data, const QAudioFormat& format, QObject* parent = nullptr)
 {
 	// ReSharper disable once CppDFAMemoryLeak
@@ -111,7 +116,7 @@ void playBuffer(const QByteArray& data, const QAudioFormat& format, QObject* par
 	conn = QObject::connect(sink, &QAudioSink::stateChanged, [&loop, &conn, sink, buffer](QAudio::State state) {
 		if (state == QAudio::IdleState)
 		{
-			QObject::disconnect(conn); // prevent re-entry from stop() emitting StoppedState
+			QObject::disconnect(conn);// prevent re-entry from stop() emitting StoppedState
 			sink->stop();
 			buffer->close();
 			sink->deleteLater();
@@ -124,17 +129,26 @@ void playBuffer(const QByteArray& data, const QAudioFormat& format, QObject* par
 	QTimer::singleShot(10000, &loop, &QEventLoop::quit);
 	loop.exec();
 }
+
 int main(int argc, char* argv[])
 {
+	// Use the alternative env var since Wine does not propagate 'QT_' prefixed vars.
+	if (qEnvironmentVariableIsSet("SF_QT_LOGGING_RULES"))
+	{
+		QString rules = qEnvironmentVariable("SF_QT_LOGGING_RULES");
+		rules.replace(QLatin1Char(';'), QLatin1Char('\n'));
+		QLoggingCategory::setFilterRules(rules);
+	}
 	// The environment variable has precedence.
-	if (qEnvironmentVariableIsEmpty("QT_LOGGING_RULES"))
+	else if (qEnvironmentVariableIsEmpty("QT_LOGGING_RULES"))
 		QLoggingCategory::setFilterRules("qt.multimedia.ffmpeg=false");
+	//
 	QPointer app(new QCoreApplication(argc, argv));
-	QCoreApplication::setApplicationName("CLI QTextToSpeech");
-	QCoreApplication::setApplicationVersion("1.0");
+	QCoreApplication::setApplicationName("Text-To-Speech Qt-Plugin CLI Tester");
+	QCoreApplication::setApplicationVersion(getVersion());
 	// Initialize the parser.
 	QCommandLineParser parser;
-	parser.setApplicationDescription("A simple Qt6 command-line parser example.");
+	parser.setApplicationDescription(QCoreApplication::applicationName() + ' ' + QCoreApplication::applicationVersion());
 	// Add default help and version options (-h, --help and -v, --version).
 	parser.addHelpOption();
 	parser.addVersionOption();
@@ -148,23 +162,29 @@ int main(int argc, char* argv[])
 	// Option for selecting a voice.
 	QCommandLineOption opt_voice({"o", "voice"}, "Voice to use.", "voice", "");
 	// Option to set the speech rate.
-	QCommandLineOption opt_rate({"r", "rate"}, "Rate of speech.", "rate", "0");
+	QCommandLineOption opt_rate({"r", "rate"}, "Rate of speech with a range of -1.0 to 1.0 and 0.0 as default value.", "rate", "0.0");
 	// Define an option that takes the TTS engine.
 	QCommandLineOption opt_filepath({"f", "filepath"}, "Filepath for output wav-files.", "filepath", "output");
 	// Define an option that takes the text value.
 	QCommandLineOption opt_text({"t", "text"}, "Text to synthesize.", "text", "");
 	// Add the command line options to the parser.
-	parser.addOptions({opt_info, opt_text, opt_engine, opt_filepath, opt_locale, opt_rate, opt_play, opt_voice});
+	parser.addOptions({opt_info, opt_engine, opt_locale, opt_voice, opt_rate, opt_play, opt_filepath, opt_text});
 	// Process the arguments passed to the application
 	parser.process(*app);
 	//
 	auto isInfo = parser.isSet(opt_info);
 	auto text = parser.value(opt_text);
 	//
+	QPointer<AudioPlayer> audioPlayer;
+	if (parser.isSet(opt_play))
+	{
+		audioPlayer = new AudioPlayer(app.get());
+	}
+	//
 	auto path = QDir(QCoreApplication::applicationDirPath()).absoluteFilePath("lib");
 	qCInfo(logApp) << "Adding library path:" << path;
 	QCoreApplication::addLibraryPath(path);
-	qCInfo(logApp) << QCoreApplication::libraryPaths();
+	qCInfo(logApp) << QCoreApplication::libraryPaths().join(QLatin1Char('\n'));
 	// Create a default one when 'engine' is not specified or the specified named engine.
 	// ReSharper disable once CppDFAMemoryLeak
 	QPointer tts(new QTextToSpeech(parser.value(opt_engine), app.get()));
@@ -182,9 +202,12 @@ int main(int argc, char* argv[])
 	// Set the voice when found.
 	if (!parser.value(opt_voice).isEmpty())
 	{
-		for (auto& voice : tts->availableVoices())
-			if (voice.name() == parser.value(opt_voice))
+		for (auto& voice: tts->availableVoices())
+		{
+			auto voice_name = parser.value(opt_voice);
+			if (voice.name() == voice_name)
 				tts->setVoice(voice);
+		}
 		if (tts->voice().name() != parser.value(opt_voice))
 			qWarning() << "Voice could not be set:" << tts->voice().name();
 	}
@@ -194,11 +217,12 @@ int main(int argc, char* argv[])
 		qInfo().noquote() << "Available Engines:" << tts->availableEngines().join(", ");
 		qInfo().noquote() << "Current Engine:" << tts->engine();
 		QStringList locales;
-		for (auto& locale :tts->availableLocales())
+		for (auto& locale: tts->availableLocales())
 			locales << locale.name();
 		qInfo().noquote() << QString("%1 Locales:").arg(tts->engine()) << locales.join(", ");
-		for (auto& voice :tts->availableVoices())
-			qInfo().noquote() << QString("%1 Voice:").arg(tts->engine()) << voice.name() << voice.locale().name() << QVoice::genderName(voice.gender()) << QVoice::ageName(voice.age());
+		for (auto& voice: tts->availableVoices())
+			qInfo().noquote() << QString("%1 Voice:").arg(tts->engine()) << voice.name() << voice.locale().name() << QVoice::genderName(voice.gender())
+												<< QVoice::ageName(voice.age());
 		qInfo().noquote() << "Speech rate:" << tts->rate();
 	}
 	// Check for appropriate engine capabilities.
@@ -224,12 +248,17 @@ int main(int argc, char* argv[])
 			return;
 		// Set flag to prevent re-entry.
 		synthesized = true;
+		qCDebug(logApp) << "TTS Synthesize:" << text;
 		tts->synthesize(text, [&](const QAudioFormat& format, const QByteArray& buffer) {
 			if (format.isValid() && !buffer.isEmpty())
 			{
 				auto filepath = parser.value(opt_filepath) + QString("-%1.wav").arg(file_counter++);
-				if (parser.isSet(opt_play))
-					playBuffer(buffer, format, app.get());
+				// Check if audio is to be played.
+				if (audioPlayer)
+				{
+					// playBuffer(buffer, format, app.get());
+					audioPlayer->play(buffer, format);
+				}
 				else
 				{
 					qCDebug(logApp) << "Synthesized data" << format << buffer.size() << "Saving to:" << filepath;
@@ -240,12 +269,23 @@ int main(int argc, char* argv[])
 	};
 	// Trigger synthesis on Ready; quit when Ready is signaled after synthesis completes.
 	QObject::connect(tts, &QTextToSpeech::stateChanged, app.get(), [&](QTextToSpeech::State state) {
-		if (state == QTextToSpeech::Ready)
+		static bool started = false;
+		if (state == QTextToSpeech::Ready && !started)
 		{
 			if (!synthesized)
+			{
+				started = true;
 				doSynthesize();
+			}
 			else
+			{
+				// When audio is played wait until it is finished play before quiting the application event loop.
+				if (audioPlayer)
+				{
+					audioPlayer->waitUntilDone();
+				}
 				app->quit();
+			}
 		}
 		else if (state == QTextToSpeech::Error)
 		{
@@ -256,9 +296,10 @@ int main(int argc, char* argv[])
 	// If engine is already Ready at startup, stateChanged won't fire — synthesize immediately.
 	if (tts->state() == QTextToSpeech::Ready)
 		doSynthesize();
-	//
+	// Start the application event loop.
 	auto rv = app->exec();
-// MinGW GCC < 13.4 detection for thread_local destructor ordering bug GCC #116159"
+	//
+	// MinGW GCC < 13.4 detection for thread_local destructor ordering bug GCC #116159"
 #if (defined(__MINGW32__) || defined(__MINGW64__)) && (__GNUC__ < 13 || (__GNUC__ == 13 && __GNUC_MINOR__ < 4))
 	QThreadPool::globalInstance()->waitForDone();
 	exitNow(rv);

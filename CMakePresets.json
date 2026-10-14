@@ -39,6 +39,10 @@
 					"type": "STRING",
 					"value": "Debug"
 				},
+				"CPACK_OUTPUT_FILE_PREFIX": {
+					"type": "PATH",
+					"value": "${sourceDir}/bin/pkg"
+				},
 				"SF_BUILD_QT": {
 					"type": "BOOL",
 					"value": "OFF"
@@ -84,6 +88,70 @@
 			}
 		},
 		{
+			"name": ".tc-gnu",
+			"description": "Toolchain for generic GNU",
+			"hidden": true,
+			"cacheVariables": {
+				"SF_COMPILER": {
+					"type": "STRING",
+					"value": "gnu"
+				}
+			},
+			"vendor": {
+				"jetbrains.com/clion": {
+					"toolchain": "GNU"
+				}
+			}
+		},
+		{
+			"name": ".tc-ga",
+			"description": "Toolchain for generic GA",
+			"hidden": true,
+			"cacheVariables": {
+				"SF_COMPILER": {
+					"type": "STRING",
+					"value": "ga"
+				}
+			},
+			"vendor": {
+				"jetbrains.com/clion": {
+					"toolchain": "GA"
+				}
+			}
+		},
+		{
+			"name": ".tc-gw",
+			"description": "Toolchain for generic GW",
+			"hidden": true,
+			"cacheVariables": {
+				"SF_COMPILER": {
+					"type": "STRING",
+					"value": "gw"
+				}
+			},
+			"vendor": {
+				"jetbrains.com/clion": {
+					"toolchain": "GW"
+				}
+			}
+		},
+		{
+			"name": ".tc-mingw",
+			"description": "Toolchain for generic MinGW",
+			"hidden": true,
+			"cacheVariables": {
+				"SF_COMPILER": {
+					"type": "STRING",
+					"value": "mingw"
+				}
+			},
+			"vendor": {
+				"jetbrains.com/clion": {
+					"toolchain": "MinGW"
+				}
+			}
+		},
+		{
 			"name": ".tc-msvc",
 			"description": "Toolchain for generic MSVC",
 			"hidden": true,
@@ -97,12 +165,18 @@
 				"WindowsSdkBinPath": "$env{MSVC_ROOT}\\Windows Kits\\10\\bin",
 				"LIB": "$env{MSVC_ROOT}\\VC\\Tools\\MSVC\\$env{VCToolsVersion}\\lib\\$env{VSCMD_ARG_TGT_ARCH};$env{MSVC_ROOT}\\Windows Kits\\10\\Lib\\$env{WindowsSDKVersion}\\ucrt\\$env{VSCMD_ARG_TGT_ARCH};$env{MSVC_ROOT}\\Windows Kits\\10\\Lib\\$env{WindowsSDKVersion}\\um\\$env{VSCMD_ARG_TGT_ARCH}",
 				"INCLUDE": "$env{MSVC_ROOT}\\VC\\Tools\\MSVC\\$env{VCToolsVersion}\\include;$env{MSVC_ROOT}\\Windows Kits\\10\\Include\\$env{WindowsSDKVersion}\\ucrt;$env{MSVC_ROOT}\\Windows Kits\\10\\Include\\$env{WindowsSDKVersion}\\shared;$env{MSVC_ROOT}\\Windows Kits\\10\\Include\\$env{WindowsSDKVersion}\\um;$env{MSVC_ROOT}\\Windows Kits\\10\\Include\\$env{WindowsSDKVersion}\\winrt;$env{MSVC_ROOT}\\Windows Kits\\10\\Include\\$env{WindowsSDKVersion}\\cppwinrt",
-				"PATH": "$env{SF_LIBRARY_DIR};$env{MSVC_ROOT}\\VC\\Tools\\MSVC\\$env{VCToolsVersion}\\bin\\Host$env{VSCMD_ARG_TGT_ARCH}\\$env{VSCMD_ARG_TGT_ARCH};$env{MSVC_ROOT}\\Windows Kits\\10\\bin\\$env{WindowsSDKVersion}\\$env{VSCMD_ARG_TGT_ARCH};$env{MSVC_ROOT}\\Windows Kits\\10\\bin\\$env{WindowsSDKVersion}\\$env{VSCMD_ARG_TGT_ARCH}\\ucrt;$penv{PATH}"
+				"LD_LIBRARY_PATH": "$env{SF_LIBRARY_DIR};$env{MSVC_ROOT}\\VC\\Tools\\MSVC\\$env{VCToolsVersion}\\bin\\Host$env{VSCMD_ARG_TGT_ARCH}\\$env{VSCMD_ARG_TGT_ARCH};$env{MSVC_ROOT}\\Windows Kits\\10\\bin\\$env{WindowsSDKVersion}\\$env{VSCMD_ARG_TGT_ARCH}\\ucrt;$penv{LD_LIBRARY_PATH}",
+				"PATH": "$env{LD_LIBRARY_PATH};$env{MSVC_ROOT}\\Windows Kits\\10\\bin\\$env{WindowsSDKVersion}\\$env{VSCMD_ARG_TGT_ARCH};$penv{PATH}"
 			},
 			"cacheVariables": {
 				"SF_COMPILER": {
 					"type": "STRING",
 					"value": "msvc"
+				}
+			},
+			"vendor": {
+				"jetbrains.com/clion": {
+					"toolchain": "MSVC"
 				}
 			}
 		},
@@ -157,37 +231,6 @@
 				"SF_BUILD_TESTING": {
 					"type": "BOOL",
 					"value": "ON"
-				},
-				"SF_COMPILER": {
-					"type": "STRING",
-					"value": "gnu"
-				}
-			},
-			"vendor": {
-				"compiler": "gnu",
-				"jetbrains.com/clion": {
-					"toolchain": "GNU"
-				}
-			}
-		},
-		{
-			"name": ".cfg-lnx-arm",
-			"inherits": [
-				".cfg-lnx"
-			],
-			"hidden": true,
-			"displayName": "Debug Linux Template",
-			"description": "Debug config Linux template.",
-			"cacheVariables": {
-				"SF_COMPILER": {
-					"type": "STRING",
-					"value": "ga"
-				}
-			},
-			"vendor": {
-				"compiler": "ga",
-				"jetbrains.com/clion": {
-					"toolchain": "GA"
 				}
 			}
 		},
@@ -207,16 +250,6 @@
 				"SF_BUILD_TESTING": {
 					"type": "BOOL",
 					"value": "ON"
-				},
-				"SF_COMPILER": {
-					"type": "STRING",
-					"value": "gw"
-				}
-			},
-			"vendor": {
-				"compiler": "gw",
-				"jetbrains.com/clion": {
-					"toolchain": "GW"
 				}
 			}
 		},
@@ -237,10 +270,6 @@
 				"SF_BUILD_TESTING": {
 					"type": "BOOL",
 					"value": "ON"
-				},
-				"SF_COMPILER": {
-					"type": "STRING",
-					"value": "mingw"
 				}
 			}
 		},
@@ -251,6 +280,7 @@
 			"description": "Debug config GNU compiler on Linux.",
 			"inherits": [
 				".qt",
+				".tc-gnu",
 				".cfg-lnx"
 			],
 			"cacheVariables": {
@@ -263,7 +293,8 @@
 			"description": "Debug config GNU Arm compiler on Linux.",
 			"inherits": [
 				".qt",
-				".cfg-lnx-arm"
+				".tc-ga",
+				".cfg-lnx"
 			],
 			"cacheVariables": {
 			}
@@ -275,6 +306,7 @@
 			"description": "Coverage config GNU compiler on Linux.",
 			"inherits": [
 				".qt",
+				".tc-gnu",
 				".cfg-lnx"
 			],
 			"cacheVariables": {
@@ -291,6 +323,7 @@
 			"description": "Coverage config Windows GW compiler on Linux.",
 			"inherits": [
 				".qt",
+				".tc-gw",
 				".cfg-win"
 			],
 			"cacheVariables": {
@@ -301,22 +334,13 @@
 			}
 		},
 		{
-			"name": "gw-debug",
-			"hidden": false,
-			"displayName": "Debug GW",
-			"description": "Debug config for Windows GW compiler on Linux.",
-			"inherits": [
-				".qt",
-				".cfg-win"
-			]
-		},
-		{
 			"name": "gnu-release",
 			"hidden": false,
 			"displayName": "Release GNU",
 			"description": "Release config GNU compiler on Linux.",
 			"inherits": [
 				".qt",
+				".tc-gnu",
 				".cfg-lnx"
 			],
 			"cacheVariables": {
@@ -333,7 +357,8 @@
 			"description": "Release config GNU Arm compiler on Linux.",
 			"inherits": [
 				".qt",
-				".cfg-lnx-arm"
+				".tc-ga",
+				".cfg-lnx"
 			],
 			"cacheVariables": {
 				"CMAKE_BUILD_TYPE": {
@@ -343,12 +368,24 @@
 			}
 		},
 		{
+			"name": "gw-debug",
+			"hidden": false,
+			"displayName": "Debug GW",
+			"description": "Debug config for Windows GW compiler on Linux.",
+			"inherits": [
+				".qt",
+				".tc-gw",
+				".cfg-win"
+			]
+		},
+		{
 			"name": "gw-release",
 			"hidden": false,
 			"displayName": "Release GW",
 			"description": "Release config for Windows GW compiler on Linux.",
 			"inherits": [
 				".qt",
+				".tc-gw",
 				".cfg-win"
 			],
 			"cacheVariables": {
@@ -365,19 +402,9 @@
 			"description": "Debug config for MinGW compiler on Windows.",
 			"inherits": [
 				".qt",
+				".tc-mingw",
 				".cfg-w64"
-			],
-			"cacheVariables": {
-				"SF_COMPILER": {
-					"type": "STRING",
-					"value": "mingw"
-				}
-			},
-			"vendor": {
-				"jetbrains.com/clion": {
-					"toolchain": "MinGW"
-				}
-			}
+			]
 		},
 		{
 			"name": "mingw-release",
@@ -386,21 +413,13 @@
 			"description": "Release config for MinGW compiler on Windows.",
 			"inherits": [
 				".qt",
+				".tc-mingw",
 				".cfg-w64"
 			],
 			"cacheVariables": {
 				"CMAKE_BUILD_TYPE": {
 					"type": "STRING",
 					"value": "Release"
-				},
-				"SF_COMPILER": {
-					"type": "STRING",
-					"value": "mingw"
-				}
-			},
-			"vendor": {
-				"jetbrains.com/clion": {
-					"toolchain": "MinGW"
 				}
 			}
 		},
@@ -415,15 +434,6 @@
 				".cfg-w64"
 			],
 			"cacheVariables": {
-				"SF_COMPILER": {
-					"type": "STRING",
-					"value": "msvc"
-				}
-			},
-			"vendor": {
-				"jetbrains.com/clion": {
-					"toolchain": "MSVC"
-				}
 			}
 		},
 		{
@@ -440,15 +450,6 @@
 				"CMAKE_BUILD_TYPE": {
 					"type": "STRING",
 					"value": "Release"
-				},
-				"SF_COMPILER": {
-					"type": "STRING",
-					"value": "msvc"
-				}
-			},
-			"vendor": {
-				"jetbrains.com/clion": {
-					"toolchain": "MSVC"
 				}
 			}
 		}
@@ -821,10 +822,10 @@
 				".lnx-only"
 			],
 			"configurePreset": "gnu-debug",
-			"packageDirectory": "${sourceDir}/bin/pkg",
+			"packageDirectory": "/tmp/$env{USER}-cpack/gnu",
 			"generators": [
-				"DEB",
-				"RPM"
+				"TGZ",
+				"DEB"
 			]
 		},
 		{
@@ -837,10 +838,10 @@
 			"displayName": "Debug GA",
 			"description": "GA ZIP + NSIS package debug.",
 			"configurePreset": "ga-debug",
-			"packageDirectory": "${sourceDir}/bin/pkg",
+			"packageDirectory": "/tmp/$env{USER}-cpack/ga",
 			"generators": [
-				"DEB",
-				"RPM"
+				"TGZ",
+				"DEB"
 			]
 		},
 		{
@@ -853,10 +854,10 @@
 			"displayName": "Debug GW",
 			"description": "GW ZIP + NSIS package debug.",
 			"configurePreset": "gw-debug",
-			"packageDirectory": "${sourceDir}/bin/pkg",
+			"packageDirectory": "/tmp/$env{USER}-cpack/gw",
 			"generators": [
-				"NSIS64",
-				"ZIP"
+				"ZIP",
+				"NSIS64"
 			]
 		},
 		{
@@ -869,10 +870,10 @@
 				".lnx-only"
 			],
 			"configurePreset": "gnu-release",
-			"packageDirectory": "${sourceDir}/bin/pkg",
+			"packageDirectory": "/tmp/$env{USER}-cpack/gnu",
 			"generators": [
-				"DEB",
-				"RPM"
+				"TGZ",
+				"DEB"
 			]
 		},
 		{
@@ -885,10 +886,10 @@
 				".lnx-only"
 			],
 			"configurePreset": "ga-release",
-			"packageDirectory": "${sourceDir}/bin/pkg",
+			"packageDirectory": "/tmp/$env{USER}-cpack/ga",
 			"generators": [
-				"DEB",
-				"RPM"
+				"TGZ",
+				"DEB"
 			]
 		},
 		{
@@ -901,10 +902,10 @@
 			"displayName": "Release GW",
 			"description": "GW ZIP + NSIS package release.",
 			"configurePreset": "gw-release",
-			"packageDirectory": "${sourceDir}/bin/pkg",
+			"packageDirectory": "/tmp/$env{USER}-cpack/gw",
 			"generators": [
-				"NSIS64",
-				"ZIP"
+				"ZIP",
+				"NSIS64"
 			]
 		},
 		{
@@ -917,10 +918,10 @@
 			"displayName": "MinGW ZIP + NSIS",
 			"description": "MinGW ZIP + NSIS package debug.",
 			"configurePreset": "mingw-debug",
-			"packageDirectory": "${sourceDir}/bin/pkg",
+			"packageDirectory": "$env{TMP}/mingw",
 			"generators": [
-				"NSIS64",
-				"ZIP"
+				"ZIP",
+				"NSIS64"
 			]
 		},
 		{
@@ -933,10 +934,10 @@
 			"displayName": "MinGW ZIP + NSIS",
 			"description": "MinGW ZIP + NSIS package debug.",
 			"configurePreset": "mingw-release",
-			"packageDirectory": "${sourceDir}/bin/pkg",
+			"packageDirectory": "$env{TMP}/mingw",
 			"generators": [
-				"NSIS64",
-				"ZIP"
+				"ZIP",
+				"NSIS64"
 			]
 		},
 		{
@@ -949,10 +950,10 @@
 			"displayName": "MSVC ZIP + NSIS",
 			"description": "MSVC ZIP + NSIS package debug.",
 			"configurePreset": "msvc-debug",
-			"packageDirectory": "${sourceDir}/bin/pkg",
+			"packageDirectory": "$env{TMP}/msvc",
 			"generators": [
-				"NSIS64",
-				"ZIP"
+				"ZIP",
+				"NSIS64"
 			]
 		},
 		{
@@ -965,10 +966,10 @@
 			"displayName": "MSVC ZIP + NSIS",
 			"description": "MSVC ZIP + NSIS package debug.",
 			"configurePreset": "msvc-release",
-			"packageDirectory": "${sourceDir}/bin/pkg",
+			"packageDirectory": "$env{TMP}/msvc",
 			"generators": [
-				"NSIS64",
-				"ZIP"
+				"ZIP",
+				"NSIS64"
 			]
 		}
 	],

@@ -1,3 +1,3 @@
 #include "logging.h"
 
-Q_LOGGING_CATEGORY(logCategory, "qt.tts.piper", QtMsgType::QtWarningMsg)
+Q_LOGGING_CATEGORY(logCategoryEngine, "qt.tts.piper", QtMsgType::QtWarningMsg)

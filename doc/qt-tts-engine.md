@@ -3,11 +3,10 @@
 ## General
 
 The main plugin class is `::sf::TextToSpeechEngine` which contains a worker thread for text-to-speech synthesis.  
-The worker thread `::sf::TextToSpeechSynthesizer` is responsible for processing text input and generating audio 
+The worker thread `::sf::TextToSpeechSynthesizer` is responsible for processing text input and generating audio
 output using the Piper1GPL engine.
 The main thread is responsible for passing the synthesized audio to the audio output device.  
 This all is event-driven.
-
 
 ## Sequences
 
