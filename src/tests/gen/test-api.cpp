@@ -7,6 +7,7 @@
 #include <QCoreApplication>
 #include <QTextToSpeech>
 #include <QEventLoop>
+#include <QMediaDevices>
 #include <QMetaEnum>
 #include <QTimer>
 
@@ -28,6 +29,11 @@ void qPlayBuffer(const QByteArray& data, const QAudioFormat& format, QObject* pa
 	buffer->open(QIODevice::ReadOnly);
 	// ReSharper disable once CppDFAMemoryLeak
 	auto sink = new QAudioSink(format, parent);
+	if (!sink->format().isValid())
+	{
+		INFO("Audio sink format is NOT valid, bailing playing.");
+		return;
+	}
 	QEventLoop loop;
 	QMetaObject::Connection conn;
 	// When the sink finishes (IdleState), clean up and unblock the event loop.
@@ -62,16 +68,28 @@ using namespace std::chrono_literals;
 
 constexpr QStringView engine_name(u"Piper");
 
+TEST_CASE("tts-piper-0")
+{
+	SECTION("OutputDevices")
+	{
+		QMediaDevices devices;
+		if (devices.audioOutputs().size() == 0)
+			WARN("No audio output devices are available.");
+		REQUIRE(devices.audioOutputs().size() > 0);
+	}
+}
+
 TEST_CASE("tts-piper-1", "[say]")
 {
 	if (!engineAvailable(engine_name))
-		SKIP(QString("Skipping because no engine '%1' is not available.").arg(engine_name).toStdString());
+		SKIP(QString("Skipping because engine '%1' is not available.").arg(engine_name).toStdString());
 
 	// Used as parent for QObject derived instances.
 	QSharedPointer<QObject> parent(new QObject);
 
 	SECTION("Speak")
 	{
+		INFO("Creating text-to-speech engine.");
 		// ReSharper disable once CppDFAMemoryLeak
 		QTextToSpeech _tts(parent.get());
 		_tts.setEngine(QString(engine_name));
@@ -141,10 +159,11 @@ TEST_CASE("tts-piper-1", "[say]")
 			"Continuing with the third line. "
 			"Finalizing with The fourth line."
 		);
-		//tts->say("Hello Everybody, this is an example text in English.");
+		// tts->say("Hello Everybody, this is an example text in English.");
 		REQUIRE(tts->state() == QTextToSpeech::Speaking);
 		while (tts->state() == QTextToSpeech::Speaking && stopwatch.durationElapsed() < 30s)
 		{
+			INFO("Waiting until speech finishes.");
 			qSleep(500);
 		}
 		// When shorter then 5 seconds it did not process all lines.
@@ -161,8 +180,11 @@ TEST_CASE("tts-piper-1", "[say]")
 		// Interrupt the speech after 2 seconds.
 		tts->say("Interrupted!");
 		// Process events until not speaking and maximum 10 seconds.
-		for (int i = 0; i < 200 && tts->state() == QTextToSpeech::Speaking; i++)
-			qSleep(50);
+		for (int i = 0; i < 20 && tts->state() == QTextToSpeech::Speaking; i++)
+		{
+			INFO("Waiting until speech finishes.");
+			qSleep(500);
+		}
 		// State must be Ready after this.
 		REQUIRE(tts->state() == QTextToSpeech::Ready);
 	}
@@ -178,6 +200,7 @@ TEST_CASE("tts-piper-2", "[synth]")
 
 	SECTION("Synthesize")
 	{
+		INFO("Creating text-to-speech engine.");
 		// ReSharper disable once CppDFAMemoryLeak
 		auto tts = new QTextToSpeech(QString(engine_name), parent.get());
 		if (tts->state() == QTextToSpeech::State::Error)
@@ -186,6 +209,8 @@ TEST_CASE("tts-piper-2", "[synth]")
 		QObject::connect(tts, &QTextToSpeech::stateChanged, [&](QTextToSpeech::State state) {
 			qDebug() << "State Change Signal: " << state;
 		});
+		// By default, English from the US is available using the 'models.py' script ans setting the locale will set a default voice as well.
+		tts->setLocale(QLocale(QLocale::Language::English, QLocale::Territory::UnitedStates));
 		// Check for appropriate engine capabilities.
 		if (!(tts->engineCapabilities() & QTextToSpeech::Capability::Synthesize))
 			SKIP(QString("Skipping because feature is not supported on by engine '%1'.").arg(tts->engine()).toStdString());
@@ -203,27 +228,43 @@ TEST_CASE("tts-piper-2", "[synth]")
 			REQUIRE(tts->state() == QTextToSpeech::Ready);
 		// Use the synthesize function with a callback lambda function.
 		tts->synthesize(
-			"This text is played externally. This is the second sentence using a separate process step.", [parent](const QAudioFormat& format, const QByteArray& buffer) {
-				REQUIRE(format.isValid());
-				REQUIRE(!buffer.isEmpty());
-				qDebug() << "Synthesized data" << format << buffer.size();
-				qPlayBuffer(buffer, format, parent.get());
+			"This text is played externally. This is the second sentence using a separate process step.",
+			[parent](const QAudioFormat& format, const QByteArray& buffer) {
+				CHECK(format.isValid());
+				CHECK(!buffer.isEmpty());
+				if (format.isValid() && !buffer.isEmpty())
+				{
+					qDebug() << "Synthesized data" << format << buffer.size();
+					qPlayBuffer(buffer, format, parent.get());
+				}
 			}
 		);
 		REQUIRE(tts->state() == QTextToSpeech::Synthesizing);
 		// Wait for synthesis to complete, up to 10 seconds.
+		qInfo() << "Wait for synthesis to complete, up to 10 seconds.";
+		//
 		for (int i = 0; i < 30; i++)
 		{
+			INFO("Waiting for Synthesis to finish.");
 			qSleep(500);
 			auto state = tts->state();
-			qInfo() << "State: " << state;
 			if (state != QTextToSpeech::Synthesizing)
+			{
 				break;
+			}
 		}
 		auto state = tts->state();
 		qInfo() << "State: " << state;
 		REQUIRE(state == QTextToSpeech::Ready);
-		while (parent->findChildren<QAudioSink*>().size() > 0)
+		QList<QAudioSink*> sinks;
+		while ((sinks = parent->findChildren<QAudioSink*>()).size() > 0)
+		{
+			if (!sinks[0]->format().isValid())
+			{
+				INFO("Audio sink format is not valid. Stopped waiting!");
+				break;
+			}
 			qSleep(100);
+		}
 	}
 }

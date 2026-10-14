@@ -4,6 +4,7 @@
 #include <QDir>
 #include <QTimer>
 #include <QSettings>
+#include <QProcessEnvironment>
 #include <iostream>
 #include "catch.h"
 #if defined(__MINGW32__) || defined(__MINGW64__) || defined(_MSC_VER)
@@ -18,8 +19,41 @@ void exitNow(int exitcode)
 }
 #endif
 
+bool isWine()
+{
+#if defined(__MINGW32__) || defined(__MINGW64__) || defined(_MSC_VER)
+	HMODULE handle = ::GetModuleHandleA("ntdll.dll");
+	if (handle && ::GetProcAddress(handle, "wine_get_version"))
+	{
+		return true;
+	}
+#endif
+	return false;
+}
+
 int main(int argc, char* argv[])
 {
+	QStringList vars{"QT_DEBUG_PLUGINS", "QT_MEDIA_BACKEND", "QT_MESSAGE_PATTERN"};
+	if (!isWine())
+	{
+		for (auto& var: vars)
+		{
+			auto key = var.prepend("SF_");
+			if (qEnvironmentVariableIsSet(key.toUtf8()))
+			{
+				QString value = qEnvironmentVariable(key.toUtf8());
+				qInfo().noquote() << QString("Setting %1=%2").arg(var, value);
+				qputenv(var.toUtf8(), value.toUtf8());
+			}
+		}
+		// Use the alternative env var since Wine does not propagate 'QT_' prefixed vars.
+		if (qEnvironmentVariableIsSet("SF_QT_LOGGING_RULES"))
+		{
+			QString rules = qEnvironmentVariable("SF_QT_LOGGING_RULES");
+			rules.replace(QLatin1Char(';'), QLatin1Char('\n'));
+			QLoggingCategory::setFilterRules(rules);
+		}
+	}
 	QSharedPointer<QCoreApplication> app(new QCoreApplication(argc, argv));
 	auto path = QDir(QCoreApplication::applicationDirPath()).absoluteFilePath("lib");
 	qInfo() << "Adding library path:" << path;

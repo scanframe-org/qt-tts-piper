@@ -2,29 +2,31 @@
 #include <algorithm>
 #include <variant>
 #include <iomanip>
+#include <sstream>
+#include <stdexcept>
 
 CommandLine::CommandLine(std::string description)
-	: mDescription(std::move(description))
+	: _description(std::move(description))
 {}
 
 void CommandLine::addArgument(std::vector<std::string> const& flags, Value const& value, std::string const& help)
 {
-	mArguments.emplace_back(Argument{flags, value, help});
+	_arguments.emplace_back(Argument{flags, value, help});
 }
 
 void CommandLine::printHelp(std::ostream& os) const
 {
 
 	// Print the general description.
-	os << mDescription << std::endl;
+	os << _description << std::endl;
 
 	// Find the argument with the longest combined flag length (to align the help messages).
 	uint32_t maxFlagLength = 0;
 
-	for (auto const& argument: mArguments)
+	for (auto const& argument: _arguments)
 	{
 		uint32_t flagLength = 0;
-		for (auto const& flag: argument.mFlags)
+		for (auto const& flag: argument._flags)
 		{
 			// Plus comma and space.
 			flagLength += static_cast<uint32_t>(flag.size()) + 2;
@@ -33,10 +35,10 @@ void CommandLine::printHelp(std::ostream& os) const
 		maxFlagLength = std::max(maxFlagLength, flagLength);
 	}
 	// Now print each argument.
-	for (auto const& argument: mArguments)
+	for (auto const& argument: _arguments)
 	{
 		std::string flags;
-		for (auto const& flag: argument.mFlags)
+		for (auto const& flag: argument._flags)
 		{
 			flags += flag + ", ";
 		}
@@ -49,8 +51,8 @@ void CommandLine::printHelp(std::ostream& os) const
 		size_t lineWidth = 0;
 		while (spacePos != std::string::npos)
 		{
-			size_t nextspacePos = argument.mHelp.find_first_of(' ', spacePos + 1);
-			sstr << argument.mHelp.substr(spacePos, nextspacePos - spacePos);
+			size_t nextspacePos = argument._help.find_first_of(' ', spacePos + 1);
+			sstr << argument._help.substr(spacePos, nextspacePos - spacePos);
 			lineWidth += nextspacePos - spacePos;
 			spacePos = nextspacePos;
 
@@ -93,20 +95,20 @@ void CommandLine::parse(int argc, char* argv[]) const
 		// Search for an argument with the provided flag.
 		bool foundArgument = false;
 		//
-		for (auto const& argument: mArguments)
+		for (auto const& argument: _arguments)
 		{
-			if (std::find(argument.mFlags.begin(), argument.mFlags.end(), flag) != std::end(argument.mFlags))
+			if (std::find(argument._flags.begin(), argument._flags.end(), flag) != std::end(argument._flags))
 			{
 				foundArgument = true;
 				// In the case of booleans, there must not be a value present.
 				// So if the value is neither 'true' nor 'false' it is considered to be the next argument.
-				if (std::holds_alternative<bool*>(argument.mValue))
+				if (std::holds_alternative<bool*>(argument._value))
 				{
 					if (!value.empty() && value != "true" && value != "false")
 					{
 						valueIsSeparate = false;
 					}
-					*std::get<bool*>(argument.mValue) = (value != "false");
+					*std::get<bool*>(argument._value) = (value != "false");
 				}
 				// In all other cases there must be a value.
 				else if (value.empty())
@@ -118,9 +120,9 @@ void CommandLine::parse(int argc, char* argv[]) const
 					);
 				}
 				// For a std::string, we take the entire value.
-				else if (std::holds_alternative<std::string*>(argument.mValue))
+				else if (std::holds_alternative<std::string*>(argument._value))
 				{
-					*std::get<std::string*>(argument.mValue) = value;
+					*std::get<std::string*>(argument._value) = value;
 				}
 				// In all other cases we use a 'std::stringstream' to convert the value.
 				else
@@ -130,23 +132,20 @@ void CommandLine::parse(int argc, char* argv[]) const
 							std::stringstream sstr(value);
 							sstr >> *arg;
 						},
-						argument.mValue
+						argument._value
 					);
 				}
 
 				break;
 			}
 		}
-
 		// Print a warning if there was an unknown argument.
 		if (!foundArgument)
 		{
 			std::cerr << "Ignoring unknown command line argument \"" << flag << "\"." << std::endl;
 		}
-
 		// Advance to the next flag.
 		++i;
-
 		// If the value was separated, we have to advance our index once more.
 		if (foundArgument && valueIsSeparate)
 		{

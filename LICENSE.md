@@ -1,5 +1,7 @@
 # License
 
+Copyright (C) 2025 Scanframe
+
 This project is licensed under the **GNU General Public License v3.0** (known as **GPL-3.0** or **GPLv3**).
 
 ### Short Description

@@ -26,8 +26,7 @@
       <property name="plainText">
        <string>Hello Everybody, this is an example text in English.
 
-QtSpeech is a library that makes text to speech easy with Qt.
-       </string>
+QtSpeech is a library that makes text to speech easy with Qt.</string>
       </property>
      </widget>
     </item>

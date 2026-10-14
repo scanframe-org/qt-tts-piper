@@ -20,70 +20,70 @@ class TextToSpeechEngine : public QTextToSpeechEngine
 		/// @brief Default constructor.
 		explicit TextToSpeechEngine(const QVariantMap& parameters, QObject* parent = nullptr);
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		~TextToSpeechEngine() override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		QList<QLocale> availableLocales() const override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		QList<QVoice> availableVoices() const override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		void say(const QString& text) override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		void synthesize(const QString& text) override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		void stop(QTextToSpeech::BoundaryHint boundaryHint) override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		void pause(QTextToSpeech::BoundaryHint boundaryHint) override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		void resume() override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		double rate() const override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		bool setRate(double rate) override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		double pitch() const override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		bool setPitch(double pitch) override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		QLocale locale() const override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		bool setLocale(const QLocale& locale) override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		double volume() const override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		bool setVolume(double volume) override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		QVoice voice() const override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		bool setVoice(const QVoice& voice) override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		QTextToSpeech::State state() const override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		QTextToSpeech::ErrorReason errorReason() const override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		QString errorString() const override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		QTextToSpeech::Capabilities capabilities() const override;
 
 	private:
@@ -134,18 +134,20 @@ class TextToSpeechEngine : public QTextToSpeechEngine
 		QDir _dirModels;
 		/// Holds the directory location of 'espeak_ng_data'.
 		QDir _dirEspeakNgData;
+
 		/// Holds the selected locale, voice, volume, and audio format.
 		struct
 		{
-			/// Holds the selected locale.
-			QLocale locale{};
-			/// Holds the selected voice index where -1 is not selected.
-			int voice{-1};
-			/// Holds the audio format.
-			QAudioFormat audioFormat{};
-			/// Holds the volume set.
-			double volume{1.0};
+				/// Holds the selected locale.
+				QLocale locale{};
+				/// Holds the selected voice index where -1 is not selected.
+				int voice{-1};
+				/// Holds the audio format.
+				QAudioFormat audioFormat{};
+				/// Holds the volume set.
+				double volume{1.0};
 		} _selected;
+
 		/// Holds the list of available locales.
 		QList<QLocale> _locales;
 		/// Holds the list of available voices.

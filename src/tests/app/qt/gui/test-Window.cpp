@@ -6,6 +6,8 @@
 #include <QAudioDevice>
 #include <algorithm>
 
+Q_DECLARE_LOGGING_CATEGORY(logCategoryApp)
+
 namespace sf
 {
 
@@ -66,16 +68,16 @@ MainWindow::~MainWindow()
 	delete ui;
 }
 
-void MainWindow::setSettings(QSettings& settings)
+void MainWindow::setSettings(QSettings* settings)
 {
-	_settings = &settings;
+	_settings = settings;
 }
 
 void MainWindow::storeState(bool save, bool text_only)
 {
 	if (!_settings)
 	{
-		qWarning() << "Settings not set!";
+		qCWarning(logCategoryApp) << "Settings not set!";
 		return;
 	}
 	auto keyAudioDeviceId(u"AudioDeviceId"_s);
@@ -192,7 +194,8 @@ void MainWindow::selectEngine(int index)
 	// Delete the previous TTS engine when it is present at all.
 	delete _tts;
 	// Report that the engine is created.
-	qDebug() << "Creating TTS engine: " << engine << ", Audio device id: " << _audioDeviceId;
+	qCInfo(logCategoryApp) << "Creating TTS engine:" << (engine.isEmpty() ? QString("Default") : engine) <<//
+		", Audio device id:" << (_audioDeviceId.isEmpty() ? QString("Default") : _audioDeviceId);
 	_tts = new QTextToSpeech(engine, {{"audioDeviceId", _audioDeviceId}}, this);
 	_tts->setProperty("audioDeviceId", _audioDeviceId);
 	// Some engines initialize asynchronously.

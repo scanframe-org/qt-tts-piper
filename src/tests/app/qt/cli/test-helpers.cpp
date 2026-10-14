@@ -1,7 +1,6 @@
 #include <iostream>
 #include <filesystem>
 
-
 #if WIN32
 	#if __MINGW32__
 		#include <windows.h>

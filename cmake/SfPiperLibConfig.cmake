@@ -1,4 +1,14 @@
-cmake_minimum_required(VERSION 3.27)
+cmake_minimum_required(VERSION 3.29...4.4)
+
+function(Sf_FetchContent_MakeAvailable)
+	cmake_parse_arguments(PARSE_ARGV 0 _ARG "NO_INSTALL" "" "")
+
+	if (_ARG_NO_INSTALL)
+		set(CMAKE_SKIP_INSTALL_RULES TRUE)
+	endif ()
+
+	FetchContent_MakeAvailable(${_ARG_UNPARSED_ARGUMENTS})
+endfunction()
 
 # Bailout when the target is already defined.
 if (TARGET "espeak-ng-data")
@@ -15,10 +25,11 @@ endif ()
 include(FetchContent)
 # Import piper1-gpl library.
 FetchContent_Declare(
-	"piper-v1.5.0"
+	"piper-v1.6.0"
 	#URL "https://codeload.github.com/Scanframe/piper1-gpl/zip/refs/heads/main"
-	URL https://github.com/Scanframe/piper1-gpl/archive/refs/tags/1.5.0.zip
-	DOWNLOAD_EXTRACT_TIMESTAMP true
+	URL "https://github.com/Scanframe/piper1-gpl/archive/refs/tags/1.6.0-rc.2.zip"
+	DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+	EXCLUDE_FROM_ALL
 )
 # Save current library output directory.
 set(__TMP__ "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
@@ -27,7 +38,34 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/texttospee
 # Force PIC compilation for the Piper library
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-FetchContent_MakeAvailable("piper-v1.5.0")
+Sf_FetchContent_MakeAvailable("piper-v1.6.0" NO_INSTALL)
+#[[
+# Piper is linked by this project and must not contribute its own install rules.
+# Otherwise FetchContent adds Piper's generated cmake_install.cmake files to the
+# top-level install graph used by CPack.
+if (DEFINED CMAKE_SKIP_INSTALL_RULES)
+	set(__TMP_SKIP_INSTALL_RULES "${CMAKE_SKIP_INSTALL_RULES}")
+	set(__TMP_SKIP_INSTALL_RULES_UNDEFINED FALSE)
+else ()
+	set(__TMP_SKIP_INSTALL_RULES_UNDEFINED TRUE)
+endif ()
+set(CMAKE_SKIP_INSTALL_RULES TRUE)
+FetchContent_MakeAvailable("piper-v1.6.0")
+if (__TMP_SKIP_INSTALL_RULES_UNDEFINED)
+	unset(CMAKE_SKIP_INSTALL_RULES)
+else ()
+	set(CMAKE_SKIP_INSTALL_RULES "${__TMP_SKIP_INSTALL_RULES}")
+endif ()
+unset(__TMP_SKIP_INSTALL_RULES)
+unset(__TMP_SKIP_INSTALL_RULES_UNDEFINED)
+]]
+
+#[[
+if (TARGET "piper")
+	# Set the target SF flag to pack it. (Should not be needed due to dependency checking when packing.)
+	set_target_properties("piper" PROPERTIES SF_FLAGS "pack")
+endif ()
+]]
 
 # Location of the piper models.
 set(SF_PIPER_MODELS_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/models" CACHE STRING INTERNAL)

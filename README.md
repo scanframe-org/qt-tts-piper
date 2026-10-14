@@ -20,7 +20,7 @@ It implements the `QTextToSpeechEngine` interface, allowing it to be used seamle
 
 * `src/engine`: The core implementation of the Qt6 TTS plugin.
 * `src/tests`: Includes both CLI and Qt-based test applications to verify the engine's functionality.
-* `models.sh`: A script to download sample Piper voice models from Hugging Face.
+* `models.py`: A script to download sample Piper voice models from Hugging Face.
 
 ## Requirements
 
@@ -62,7 +62,7 @@ The tools incorporated in the Docker image allow building the project for Window
 # On Windows, configure and build using the MinGW compiler.
 ./build.py -mb mingw-debug
 # On Windows, configure and build using the MSNC compiler.
-./build.py -mb gw-debug
+./build.py -mb msvc-debug
 # On Linux, configure and build using the Docker and the MSVC compiler using Wine.
 ./build.py docker -- wine -- -mb msvc-debug
 ```
@@ -101,6 +101,50 @@ Example of selecting the engine in C++:
 ```cpp
 QTextToSpeech *tts = new QTextToSpeech("piper");
 ```
+
+## Troubleshooting
+
+### Enabling Logging
+
+Qt provides a powerful logging framework that can help diagnose issues with the plugin. To enable logging, set the
+`SF_QT_LOGGING_RULES` environment variable before running your application. This variable is used instead of the standard
+`QT_LOGGING_RULES` to ensure compatibility when running under Wine, where `QT_` prefixed environment variables are not
+properly propagated.
+
+Enable all TTS-related logging:
+
+```shell
+export SF_QT_LOGGING_RULES="qt.tts.*=true"
+```
+
+Enable debug-level logging for specific categories:
+
+```shell
+export SF_QT_LOGGING_RULES="qt.tts.*.debug=true;qt.tts.*=true"
+```
+
+To enable plugin discovery logging as well:
+
+```shell
+export SF_QT_LOGGING_RULES="qt.core.plugin.factoryloader.debug=true;qt.tts.*=true"
+```
+
+Multiple rules can be combined using semicolons as separators. The rules follow Qt's logging category format where
+`<category>[.<type>] = true|false`. Common categories include `qt.tts.engine`, `qt.tts.synthesizer`, and `qt.tts.plugin`.
+
+### Custom Log Message Format
+
+You can also customize the log message format using the `SF_QT_MESSAGE_PATTERN` environment variable:
+
+```shell
+export SF_QT_MESSAGE_PATTERN="%%{if-category}%%{category}: %%{endif}%%{function}: %%{message}"
+```
+
+### Running Under Wine
+
+When running the application under Wine, note that environment variables with the `QT_` prefix (such as `QT_LOGGING_RULES`)
+are not propagated to the Windows environment. Therefore, always use the `SF_QT_LOGGING_RULES` and `SF_QT_MESSAGE_PATTERN`
+variables instead, which are explicitly supported by the test applications in this project.
 
 ## License
 

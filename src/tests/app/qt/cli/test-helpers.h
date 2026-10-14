@@ -11,7 +11,7 @@ bool isWine();
 
 /**
  * Determines if the application is running in Docker
- * @return True when running Wine.
+ * @return True when running Docker.
  */
 bool isDocker();
 
