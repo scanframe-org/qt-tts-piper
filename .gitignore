@@ -37,5 +37,11 @@
 # Toochain environment files.
 /.tc-*
 # Temporary markdowns.
-COMMITMSG.md
-REVIEW.md
+**/COMMITMSG.md
+**/COMMITLST.md
+**/REVIEW.md
+# Files downloaded.
+/bin/models
+/download
+# Linked
+external

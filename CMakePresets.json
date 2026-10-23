@@ -2,7 +2,7 @@
 	"version": 6,
 	"cmakeMinimumRequired": {
 		"major": 3,
-		"minor": 25,
+		"minor": 29,
 		"patch": 0
 	},
 	"configurePresets": [
@@ -95,6 +95,10 @@
 				"SF_COMPILER": {
 					"type": "STRING",
 					"value": "gnu"
+				},
+				"SF_QT_BIN_SUBDIR": {
+					"type": "STRING",
+					"value": "gcc_64/bin"
 				}
 			},
 			"vendor": {
@@ -111,6 +115,10 @@
 				"SF_COMPILER": {
 					"type": "STRING",
 					"value": "ga"
+				},
+				"SF_QT_BIN_SUBDIR": {
+					"type": "STRING",
+					"value": "gcc_64/bin"
 				}
 			},
 			"vendor": {
@@ -127,6 +135,10 @@
 				"SF_COMPILER": {
 					"type": "STRING",
 					"value": "gw"
+				},
+				"SF_QT_BIN_SUBDIR": {
+					"type": "STRING",
+					"value": "mingw_64/bin"
 				}
 			},
 			"vendor": {
@@ -143,6 +155,10 @@
 				"SF_COMPILER": {
 					"type": "STRING",
 					"value": "mingw"
+				},
+				"SF_QT_BIN_SUBDIR": {
+					"type": "STRING",
+					"value": "mingw_64/bin"
 				}
 			},
 			"vendor": {
@@ -172,6 +188,10 @@
 				"SF_COMPILER": {
 					"type": "STRING",
 					"value": "msvc"
+				},
+				"SF_QT_BIN_SUBDIR": {
+					"type": "STRING",
+					"value": "msvc_64/bin"
 				}
 			},
 			"vendor": {
@@ -512,8 +532,7 @@
 				".lnx-only"
 			],
 			"targets": [
-				"t_devops-shared-test-catch",
-				"t_devops-shared-test-google"
+				"qt-tts-piper-test"
 			]
 		},
 		{
@@ -560,7 +579,7 @@
 				".lnx-only"
 			],
 			"targets": [
-				"t_devops-shared-test"
+				"qt-tts-piper-test"
 			]
 		},
 		{
@@ -788,7 +807,7 @@
 			"name": ".pack",
 			"displayName": "Package Template",
 			"description": "Template for packaging.",
-			"packageDirectory": "${sourceDir}/bin/pkg",
+			"packageDirectory": "",
 			"output": {
 				"verbose": false,
 				"debug": false
@@ -825,7 +844,8 @@
 			"packageDirectory": "/tmp/$env{USER}-cpack/gnu",
 			"generators": [
 				"TGZ",
-				"DEB"
+				"DEB",
+				"AppImage"
 			]
 		},
 		{
@@ -836,12 +856,13 @@
 				".lnx-only"
 			],
 			"displayName": "Debug GA",
-			"description": "GA ZIP + NSIS package debug.",
+			"description": "GA TGZ + DEB package debug.",
 			"configurePreset": "ga-debug",
 			"packageDirectory": "/tmp/$env{USER}-cpack/ga",
 			"generators": [
 				"TGZ",
-				"DEB"
+				"DEB",
+				"AppImage"
 			]
 		},
 		{
@@ -873,7 +894,8 @@
 			"packageDirectory": "/tmp/$env{USER}-cpack/gnu",
 			"generators": [
 				"TGZ",
-				"DEB"
+				"DEB",
+				"AppImage"
 			]
 		},
 		{

@@ -118,8 +118,12 @@ else ()
 		install(FILES ${_Files} DESTINATION "lib/texttospeech/" COMPONENT "${SF_DEFAULT_COMPONENT_NAME}")
 	endif ()
 endif ()
+# Common models directory for any build.
+set(_ModelsDir "${CMAKE_CURRENT_LIST_DIR}/bin/models")
 # Get the real path of the models directory since it is a symlink (development only to save space).
-get_filename_component(_ModelsDir "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/texttospeech/models/" REALPATH)
+if (NOT EXISTS "${_ModelsDir}")
+	get_filename_component(_ModelsDir "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/texttospeech/models" REALPATH)
+endif ()
 # Install the models files.
 install(DIRECTORY "${_ModelsDir}" DESTINATION "lib/texttospeech" COMPONENT "${SF_DEFAULT_COMPONENT_NAME}")
 # Install the espeak-ng data files.

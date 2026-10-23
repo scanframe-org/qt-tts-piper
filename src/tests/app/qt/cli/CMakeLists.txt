@@ -18,7 +18,7 @@ if (TRUE)
 	# Find the test sources.
 	file(GLOB TEST_APP_SOURCES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "test-*")
 	# Add shared library and also sets the executable version.
-	Sf_AddTarget("${TEST_APP_TARGET}" FLAGS pack VERSION EXIF SUFFIX)
+	Sf_AddTarget("${TEST_APP_TARGET}" FLAGS pack qt VERSION EXIF SUFFIX)
 	# Should be linked to the main library.
 	target_link_libraries("${TEST_APP_TARGET}" PRIVATE Qt::Gui Qt::Widgets Qt::TextToSpeech)
 	# Add the sources.
@@ -33,7 +33,7 @@ else ()
 	# Find the test sources.
 	file(GLOB TEST_APP_SOURCES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "test-*")
 	# Add shared library and also sets the executable version.
-	Sf_AddTarget("${TEST_APP_TARGET}" FLAGS test cov pack VERSION EXIF SUFFIX)
+	Sf_AddTarget("${TEST_APP_TARGET}" FLAGS test cov qt pack VERSION EXIF SUFFIX)
 	# Should be linked to the main library.
 	target_link_libraries("${TEST_APP_TARGET}" PRIVATE piper::static)
 	# Add the sources.

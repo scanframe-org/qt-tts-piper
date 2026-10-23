@@ -17,7 +17,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 # Add shared library and also sets the dynamic library version.
-Sf_AddTarget("${_TargetName}" SHARED FLAGS doc VERSION EXIF SUFFIX COVERAGE)
+Sf_AddTarget("${_TargetName}" SHARED FLAGS doc qt VERSION EXIF SUFFIX COVERAGE)
 
 # Set the correct plugin directory.
 get_target_property(_LibOutDir "${_TargetName}" LIBRARY_OUTPUT_DIRECTORY)

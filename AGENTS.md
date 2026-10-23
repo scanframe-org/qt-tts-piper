@@ -1,5 +1,9 @@
 # Agent Instructions: C++ Project
 
+## General
+
+Follow also the `cmake/lib` submodule [`AGENTS.md`](cmake/lib/tpl/root/AGENTS.md) file.
+
 ## Overview
 
 This is a modern Qt6 cross-platform 'Text-To-Speech' plugin project using CMake.
