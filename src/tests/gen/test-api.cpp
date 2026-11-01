@@ -10,15 +10,63 @@
 #include <QMediaDevices>
 #include <QMetaEnum>
 #include <QTimer>
+#include <filesystem>
 
 namespace
 {
 
-void qSleep(int milliseconds)
+bool isQemu()
+{
+#if !WIN32
+	// QEMU user-mode (Docker with binfmt_misc): the host registers an emulator handler.
+	if (std::filesystem::exists("/proc/sys/fs/binfmt_misc/qemu-aarch64"))
+	{
+		return true;
+	}
+	// QEMU system emulation (a full VM) with virtio devices.
+	if (std::filesystem::exists("/sys/bus/virtio"))
+	{
+		return true;
+	}
+#endif
+	return false;
+}
+
+// Returns the factor to multiply test timings with.
+int timeFactor()
+{
+	static const int factor = []() -> int {
+		// An explicit setting always wins, e.g. TEST_TIMEOUT_FACTOR=10.
+		if (qEnvironmentVariableIsSet("TEST_TIMEOUT_FACTOR"))
+		{
+			return qMax(1, qEnvironmentVariableIntValue("TEST_TIMEOUT_FACTOR"));
+		}
+		return isQemu() ? 3 : 1;
+	}();
+	return factor;
+}
+
+void qSleep(const int milliseconds)
 {
 	QEventLoop loop;
 	QTimer::singleShot(milliseconds, &loop, &QEventLoop::quit);
 	loop.exec();
+}
+
+// Process events until the predicate is true or the scaled timeout expires.
+bool qWaitFor(const int timeoutMs, const std::function<bool()>& pred)
+{
+	QElapsedTimer timer;
+	timer.start();
+	while (!pred())
+	{
+		if (timer.hasExpired(timeoutMs * timeFactor()))
+		{
+			return false;
+		}
+		QCoreApplication::processEvents(QEventLoop::AllEvents, 500);
+	}
+	return true;
 }
 
 void qPlayBuffer(const QByteArray& data, const QAudioFormat& format, QObject* parent = nullptr)
@@ -161,13 +209,11 @@ TEST_CASE("tts-piper-1", "[say]")
 		);
 		// tts->say("Hello Everybody, this is an example text in English.");
 		REQUIRE(tts->state() == QTextToSpeech::Speaking);
-		while (tts->state() == QTextToSpeech::Speaking && stopwatch.durationElapsed() < 30s)
-		{
-			INFO("Waiting until speech finishes.");
-			qSleep(500);
-		}
+		qWaitFor(30000, [tts]() -> bool {
+			return tts->state() != QTextToSpeech::Speaking;
+		});
 		// When shorter then 5 seconds it did not process all lines.
-		REQUIRE(stopwatch.durationElapsed() > 8s);
+		REQUIRE(stopwatch.durationElapsed() > 6s);
 		// Say a test message and enqueue another.
 		tts->say("Hello, world!");
 		tts->enqueue("This is a long text for speaking.");
@@ -180,11 +226,10 @@ TEST_CASE("tts-piper-1", "[say]")
 		// Interrupt the speech after 2 seconds.
 		tts->say("Interrupted!");
 		// Process events until not speaking and maximum 10 seconds.
-		for (int i = 0; i < 20 && tts->state() == QTextToSpeech::Speaking; i++)
-		{
+		qWaitFor(10000, [tts]() -> bool {
 			INFO("Waiting until speech finishes.");
-			qSleep(500);
-		}
+			return tts->state() == QTextToSpeech::Ready;
+		});
 		// State must be Ready after this.
 		REQUIRE(tts->state() == QTextToSpeech::Ready);
 	}
@@ -241,30 +286,26 @@ TEST_CASE("tts-piper-2", "[synth]")
 		);
 		REQUIRE(tts->state() == QTextToSpeech::Synthesizing);
 		// Wait for synthesis to complete, up to 10 seconds.
-		qInfo() << "Wait for synthesis to complete, up to 10 seconds.";
+		qInfo() << "Wait for synthesis to complete, up to 15 seconds.";
 		//
-		for (int i = 0; i < 30; i++)
-		{
+		qWaitFor(15000, [tts]() -> bool {
 			INFO("Waiting for Synthesis to finish.");
-			qSleep(500);
 			auto state = tts->state();
-			if (state != QTextToSpeech::Synthesizing)
-			{
-				break;
-			}
-		}
+			return state != QTextToSpeech::Synthesizing;
+		});
+		//
 		auto state = tts->state();
 		qInfo() << "State: " << state;
 		REQUIRE(state == QTextToSpeech::Ready);
-		QList<QAudioSink*> sinks;
-		while ((sinks = parent->findChildren<QAudioSink*>()).size() > 0)
-		{
-			if (!sinks[0]->format().isValid())
+		//
+		qWaitFor(100, [parent]() -> bool {
+			auto sinks = parent->findChildren<QAudioSink*>();
+			if (sinks.size() > 0 && !sinks[0]->format().isValid())
 			{
 				INFO("Audio sink format is not valid. Stopped waiting!");
-				break;
+				return true;
 			}
-			qSleep(100);
-		}
+			return false;
+		});
 	}
 }

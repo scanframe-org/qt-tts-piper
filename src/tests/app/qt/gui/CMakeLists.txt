@@ -17,13 +17,9 @@ set(CMAKE_AUTORCC ON)
 file(GLOB TEST_APP_SOURCES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "test-*")
 
 # Add shared library and also sets the executable version.
-Sf_AddTarget("${TEST_APP_TARGET}" FLAGS pack gui qt VERSION EXIF SUFFIX)
+Sf_AddTarget("${TEST_APP_TARGET}" FLAGS pack gui qt VERSION EXIF SUFFIX EXCL_COV)
 
-target_sources("${TEST_APP_TARGET}"
-	PRIVATE
-	main.cpp
-	"${TEST_APP_SOURCES}"
-)
+target_sources("${TEST_APP_TARGET}" PRIVATE main.cpp "${TEST_APP_SOURCES}")
 
 # Set version from Git.
 target_compile_definitions("${TEST_APP_TARGET}" PRIVATE SF_VERSION=${SF_VERSION})

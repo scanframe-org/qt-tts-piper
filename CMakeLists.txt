@@ -80,8 +80,15 @@ endif ()
 
 # Set the C++ standard to 17 for all projects which is required for the SfCompiler package.
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_C_STANDARD 17)
+
+# Show all information on the current toolchain and system and host.
+Sf_ToolChainInfo()
 
 if (SF_BUILD_TESTING)
+	# Pin the version for the SfCatch2 package other then the default.
+	ini_read_value(_Version "${CMAKE_CURRENT_LIST_DIR}/build.ini" "config" "catch2-ver" "3.12.0")
+	find_package(SfCatch2 "${_Version}" CONFIG)
 	# Prevents Catch2 from adding targets.
 	set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
 	# Enable the tests added with add_test.

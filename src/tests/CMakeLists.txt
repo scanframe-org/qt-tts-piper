@@ -2,11 +2,11 @@
 set(TEST_TARGET "${PROJECT_NAME}-test")
 
 # Make Catch2::Catch2 library available.
-find_package(SfCatch2 3.14.0 CONFIG REQUIRED)
+find_package(SfCatch2 CONFIG REQUIRED)
 
 # Find the needed packages.
 find_package(QT NAMES Qt6 Qt5 COMPONENTS Core REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Gui Widgets TextToSpeech REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core TextToSpeech REQUIRED)
 # Import target 'espeak-ng-data' for generating/compiling the required 'espeak-ng-data' directory.
 find_package(SfEspeakNgData 1.52.0 CONFIG REQUIRED)
 # Enable QT flags for this project.
@@ -15,7 +15,12 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 # Adds this executable as a test and a coverage information generator using target flags (test, cov).
 # The 'COVERAGE' option is only when inlined function coverage is required.
-Sf_AddTarget("${TEST_TARGET}" FLAGS test cov VERSION EXIF SUFFIX COVERAGE)
+if ("${SF_COMPILER}" STREQUAL "ga")
+	Sf_AddTarget("${TEST_TARGET}" FLAGS test VERSION EXIF SUFFIX)
+else ()
+	Sf_AddTarget("${TEST_TARGET}" FLAGS test cov VERSION EXIF SUFFIX)
+endif ()
+
 # Find the test sources.
 file(GLOB TEST_SOURCES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "gen/test-*")
 target_sources("${TEST_TARGET}" PRIVATE main.cpp "${TEST_SOURCES}")

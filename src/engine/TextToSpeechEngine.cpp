@@ -288,6 +288,8 @@ bool TextToSpeechEngine::updateVoice(qsizetype idx)
 	_selected.audioFormat.setSampleRate(readJsonFile(fi_json.filePath()).object()["audio"].toObject()["sample_rate"].toInt());
 	// 1 for Mono, 2 for Stereo.
 	_selected.audioFormat.setChannelCount(1);
+	// Channel configuration for mono.
+	_selected.audioFormat.setChannelConfig(QAudioFormat::ChannelConfigMono);
 	// Specify 16-bit signed integers.
 	_selected.audioFormat.setSampleFormat(QAudioFormat::Float);
 	// Trigger a voice update/reload when something has changed.
