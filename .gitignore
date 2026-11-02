@@ -41,7 +41,9 @@
 **/COMMITLST.md
 **/REVIEW.md
 # Files downloaded.
-/bin/models
+/bin/models*
 /download
 # Linked
 external
+build-test.log
+src/models

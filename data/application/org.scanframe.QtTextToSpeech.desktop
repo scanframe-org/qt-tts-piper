@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Categories=Utility;
+Name=Qt Text-To-Speech
+Comment=A Qt6 text-to-speech (TTS) synthesizer application.
+Exec=qt-tts-piper-gui %U
+Icon=org.scanframe.QtTextToSpeech
+Terminal=false
+Keywords=Text-To-Speech;TTS;
+StartupNotify=true

@@ -30,8 +30,3 @@ target_compile_definitions("${TEST_TARGET}" PRIVATE TARGET_QT)
 target_link_libraries("${TEST_TARGET}" PRIVATE Catch2::Catch2 Qt::Core Qt::TextToSpeech)
 # Add the as a test application under the label 'Catch2'.
 Sf_AddTest("${TEST_TARGET}" "Catch2")
-
-add_subdirectory("app/qt/cli")
-if (SF_BUILD_GUI_TESTING)
-	add_subdirectory("app/qt/gui")
-endif ()

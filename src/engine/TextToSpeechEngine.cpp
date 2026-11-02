@@ -65,6 +65,7 @@ TextToSpeechEngine::TextToSpeechEngine(const QVariantMap& parameters, QObject* p
 		qCInfo(logCategoryEngine) << "Processing model:" << fi.baseName();
 		auto json = readJsonFile(fi.filePath()).object();
 		auto language = json["language"].toObject();
+		auto audio = json["audio"].toObject();
 		auto family = language["family"].toString();
 		auto region = language["region"].toString();
 		auto speakers = json["num_speakers"].toInt();
@@ -77,8 +78,11 @@ TextToSpeechEngine::TextToSpeechEngine(const QVariantMap& parameters, QObject* p
 		for (int i = 0; i < speakers; i++)
 		{
 			auto [model_name, gender] = getModelGenderFromFilename(fi.completeBaseName(), i);
+			// When there are multiple speakers, append the speaker number to the model name.
 			if (speakers > 1)
 				model_name.append(u"_%1"_s.arg(i));
+			// Append the audio quality to the model name.
+			model_name.append(u" %1"_s.arg(audio["quality"].toString()));
 			auto voice = createVoice(
 				model_name, loc, gender, QVoice::Age::Adult,//
 				QVariant::fromValue(FileSpeaker(fi.completeBaseName(), i))

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Validate this file using: appstreamcli validate &#45;&#45;pedantic <xml-file>
+-->
+<component type="desktop-application">
+	<id>org.scanframe.QtTextToSpeech</id>
+
+	<name>Qt Text-To-Speech</name>
+	<launchable type="desktop-id">org.scanframe.QtTextToSpeech.desktop</launchable>
+
+	<developer id="org.scanframe">
+		<name>Scanframe</name>
+	</developer>
+
+	<metadata_license>CC0-1.0</metadata_license>
+	<project_license>GPL-3.0-or-later</project_license>
+
+	<summary>Qt Text-to-speech using Piper</summary>
+	<description>
+		<p>A Qt-based text-to-speech application.
+		The application uses the Piper engine and ONNX models from
+		Hugging Face (rhasspy/piper-voices)</p>
+	</description>
+
+	<url type="homepage">https://github.com/Scanframe/qt-tts-piper</url>
+	<provides>
+		<binary>qt-tts-piper-gui</binary>
+		<binary>qt-tts-piper-cli</binary>
+	</provides>
+
+	<content_rating type="oars-1.1"/>
+
+	<releases>
+		<release
+				version="@CPACK_PACKAGE_VERSION@"
+				date="@SF_GIT_DATE@"
+		/>
+	</releases>
+</component>

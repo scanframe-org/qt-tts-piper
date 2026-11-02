@@ -78,8 +78,8 @@ if (SF_BUILD_QT)
 	find_package(SfQtLibrary "${_QtVer}" CONFIG REQUIRED)
 endif ()
 
-# Set the C++ standard to 17 for all projects which is required for the SfCompiler package.
-set(CMAKE_CXX_STANDARD 17)
+# Set the C++ standard to 20 even when Qt6 framework is build using C++17.
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_C_STANDARD 17)
 
 # Show all information on the current toolchain and system and host.

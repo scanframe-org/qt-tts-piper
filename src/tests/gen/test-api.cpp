@@ -54,14 +54,18 @@ void qSleep(const int milliseconds)
 }
 
 // Process events until the predicate is true or the scaled timeout expires.
-bool qWaitFor(const int timeoutMs, const std::function<bool()>& pred)
+bool qWaitFor(const int timeout, const std::function<bool()>& pred, const int finalTimeout = 0)
 {
 	QElapsedTimer timer;
 	timer.start();
 	while (!pred())
 	{
-		if (timer.hasExpired(timeoutMs * timeFactor()))
+		// Check the predicate.
+		if (timer.hasExpired(timeout * timeFactor()))
 		{
+			// Give just a bit of time to finish up.
+			if (finalTimeout)
+				QCoreApplication::processEvents(QEventLoop::AllEvents, finalTimeout);
 			return false;
 		}
 		QCoreApplication::processEvents(QEventLoop::AllEvents, 500);
@@ -192,21 +196,14 @@ TEST_CASE("tts-piper-1", "[say]")
 		// Timer to time the duration of processing and speaking.
 		QElapsedTimer stopwatch;
 		stopwatch.start();
-		// A long text duration test.
-		/*
-		tts->say(
-			"Hello Everybody, this is an example text in English.\n"
-			"QtSpeech is a library that makes text to speech easy with Qt.\n"
-			"This is the end, the end of the speech example.\n"
-			"Thank you for listening."
-		);
-		*/
-		tts->say(
+		QString text(
 			"The is first line synthesized. "
-			"An this is the second line.\n"
+			"And this is the second line.\n"
 			"Continuing with the third line. "
-			"Finalizing with The fourth line."
+			"Finalizing with this fourth line."
 		);
+		INFO(std::string("Speaking: ").append(text.toStdString()));
+		tts->say(text);
 		// tts->say("Hello Everybody, this is an example text in English.");
 		REQUIRE(tts->state() == QTextToSpeech::Speaking);
 		qWaitFor(30000, [tts]() -> bool {
@@ -216,7 +213,7 @@ TEST_CASE("tts-piper-1", "[say]")
 		REQUIRE(stopwatch.durationElapsed() > 6s);
 		// Say a test message and enqueue another.
 		tts->say("Hello, world!");
-		tts->enqueue("This is a long text for speaking.");
+		tts->enqueue("This is a long text for speaking and I want to be interrupted.");
 		tts->enqueue("If you here this the previous one was not interrupted.");
 		REQUIRE(tts->state() == QTextToSpeech::Speaking);
 		// Wait 2 seconds before interrupting.
@@ -224,12 +221,16 @@ TEST_CASE("tts-piper-1", "[say]")
 		// Check if still speaking.
 		REQUIRE(tts->state() == QTextToSpeech::Speaking);
 		// Interrupt the speech after 2 seconds.
-		tts->say("Interrupted!");
+		tts->say("I was successfully interrupted.");
 		// Process events until not speaking and maximum 10 seconds.
-		qWaitFor(10000, [tts]() -> bool {
-			INFO("Waiting until speech finishes.");
-			return tts->state() == QTextToSpeech::Ready;
-		});
+		qWaitFor(
+			10000,
+			[tts]() -> bool {
+				INFO("Waiting until speech finishes.");
+				return tts->state() == QTextToSpeech::Ready;
+			},
+			2000
+		);
 		// State must be Ready after this.
 		REQUIRE(tts->state() == QTextToSpeech::Ready);
 	}
@@ -255,7 +256,7 @@ TEST_CASE("tts-piper-2", "[synth]")
 			qDebug() << "State Change Signal: " << state;
 		});
 		// By default, English from the US is available using the 'models.py' script ans setting the locale will set a default voice as well.
-		tts->setLocale(QLocale(QLocale::Language::English, QLocale::Territory::UnitedStates));
+		tts->setLocale(QLocale(QLocale::Language::English, QLocale::Territory::UnitedKingdom));
 		// Check for appropriate engine capabilities.
 		if (!(tts->engineCapabilities() & QTextToSpeech::Capability::Synthesize))
 			SKIP(QString("Skipping because feature is not supported on by engine '%1'.").arg(tts->engine()).toStdString());

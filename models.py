@@ -14,11 +14,14 @@ MODELS_DIR: Path = Path(__file__).parent / "bin" / "models"
 # List of default voices to download.
 # noinspection SpellCheckingInspection
 DEFAULT_VOICES: List[List[str]] = [
-	["en", "US", "hfc_female", "medium"],
-	["en" ,"US" ,"hfc_male", "medium"],
-	["en", "GB", "cori", "high"],
-	["en", "US", "lessac", "medium"],
-	["en", "US", "ljspeech", "medium"],
+	["en", "GB", "cori", "medium"],
+	["en", "US", "amy", "medium"],
+	["en", "US", "ryan", "medium"],
+	# ["en", "US", "hfc_female", "medium"],
+	# ["en" ,"US" ,"hfc_male", "medium"],
+	# ["en", "GB", "cori", "high"],
+	# ["en", "US", "lessac", "medium"],
+	# ["en", "US", "ljspeech", "medium"],
 ]
 
 def download_file(url: str, destination: Path) -> None:
