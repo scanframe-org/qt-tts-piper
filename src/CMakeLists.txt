@@ -9,6 +9,4 @@ if (SF_BUILD_TESTING)
 endif()
 
 add_subdirectory("app/qt/cli")
-if (SF_BUILD_GUI_TESTING)
-	add_subdirectory("app/qt/gui")
-endif ()
+add_subdirectory("app/qt/gui")
