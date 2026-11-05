@@ -1,5 +1,4 @@
 #pragma once
-#include <QAudioSink>
 #include <QMutex>
 #include <QQueue>
 #include <QThread>
@@ -18,15 +17,29 @@ class TextToSpeechSynthesizer : public QThread
 		Q_OBJECT
 	public:
 		/// @brief Piper used buffer type.
-		typedef std::vector<float> buffer_t;
+		typedef float sample_t;
+
+		/// @brief Queue flag for controlling the synthesis process.
+		enum class QueueFlag : int
+		{
+			/// The synthesis has been aborted.
+			qfAborted = 0,
+			/// Play the buffer on the audio device.
+			qfPlay = 1,
+			/// Send the buffer to the caller as this is the not last one.
+			qfSend = 2,
+			/// Send the buffer to the caller and signal that this is the last one.
+			qfSendEnd = 3
+		};
+		Q_ENUM(QueueFlag)
 
 		/// @brief Callback type for playing the buffer.
-		typedef std::function<void(const buffer_t&)> callback_t;
+		typedef std::function<void(QueueFlag, const QByteArray&)> callback_t;
 
 		/// Use the base class constructor.
 		using QThread::QThread;
 
-		/// @brief Overridden form base class.
+		/// @brief Overridden from base class.
 		~TextToSpeechSynthesizer() override;
 
 		/// @brief Sets the location of the 'espeak_ng_data' directory.
@@ -75,7 +88,7 @@ class TextToSpeechSynthesizer : public QThread
 
 	public:
 		/// @brief Add work to the queue to be synthesized.
-		void add(const QStringList& lines);
+		void add(QueueFlag flag, const QString& text);
 
 		/// @brief Clear any work from being synthesized.
 		void clear();
@@ -84,21 +97,22 @@ class TextToSpeechSynthesizer : public QThread
 		/// Mutex for condition triggering.
 		QMutex _mutexCondition;
 		/// Mutex for shared resource locking.
-		QMutex _mutexData;
+		QRecursiveMutex _mutexData;
 		/// Condition to trigger when there is work.
 		QWaitCondition _condition;
 		/// List of texts to synthesize and speak.
-		QQueue<QString> _queueText;
+		QQueue<QPair<QueueFlag, QString>> _queueText;
+		/// Buffers synthesized and ready to be played.
+		typedef QPair<QueueFlag, QByteArray> buffer_entry_t;
+		QQueue<buffer_entry_t> _buffers;
 		/// Flag set when a (re)load of the voice is needed.
 		int _voiceReload{0};
-		/// Buffers synthesized and ready to be played.
-		QQueue<buffer_t> _buffers;
 		/// Flag set when the thread should terminate.
-		bool _abort{false};
+		std::atomic<bool> _abort{false};
 		/// Holds the piper engine configuration.
 		piper_synthesizer* _piper{nullptr};
 		/// Holds the piper synthesize options.
-		piper_synthesize_options _options;
+		piper_synthesize_options _options{0, 0, 0, 0};
 		/// Holds espeak_ng_data directory location.
 		std::filesystem::path _piperEspeakNgData;
 		/// Holds the voice model data file.
@@ -108,9 +122,9 @@ class TextToSpeechSynthesizer : public QThread
 		/// Holds the selected speaker id.
 		int _voiceSpeakerId{0};
 		/// Holds the initial length scale of the selected model.
-		float _lengthScale {1.0};
+		float _lengthScale{1.0};
 		/// Holds the rate to modify the length scale with.
-		float _lengthScaleFactor {1.0};
+		float _lengthScaleFactor{1.0};
 };
 
 }// namespace sf

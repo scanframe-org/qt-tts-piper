@@ -1,9 +1,9 @@
 {
 	"Keys": [
 		"sf",
-		"piper"
+		"Scanframe"
 	],
-	"Provider": "Scanframe",
+	"Provider": "Piper",
 	"Description": "Scanframe/Piper TTS engine plugin for Qt6",
 	"Version": "100",
 	"Website": "https://github.com/Scanframe",
@@ -11,8 +11,7 @@
 	"Capabilities": [
 		"Speak",
 		"PauseResume",
-		"Synthesize",
-		"WordByWordProgress"
+		"Synthesize"
 	]
 }
 

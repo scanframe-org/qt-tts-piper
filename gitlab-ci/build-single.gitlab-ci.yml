@@ -1,4 +1,4 @@
-# Variables needed for this file where commented out values are from the parent pipeline or CI-settings.
+# Variables needed for this file where the commented-out values are from the parent pipeline or CI-settings.
 variables:
   # Logger tag value.
   #SF_TARGET_ARCH: "amd64"
@@ -31,8 +31,8 @@ stages:
   # Deploy generated packages.
   - deploy
 
-# Fetches tags and checks if a tag describes current state of the repository.
-# Is not, unshallow is tried and exits when no tag is still not found.
+# Fetches tags and checks if a tag describes the current state of the repository.
+# If not, unshallow is tried and exits when still no tag is found.
 .script-tags: &tags-script
   - |
     # Prevent error when fetching.
@@ -50,10 +50,12 @@ stages:
         echo "Could not git describe and is probably missing a version tag!"
         exit 1
       fi
-    fi    
+    fi
 
 # Defaults for all jobs.
 default:
+  # Set a time limit for all jobs here.
+  timeout: 1h
   # Set a specific Docker image to execute all jobs in.
   image: "${SF_DOCKER_IMAGE}"
   # Tags determine the selection of a runner.
@@ -64,8 +66,8 @@ default:
   # Allow to be interrupted.
   interruptible: true
 
-# Job for creating the make-file using the build.sh script calling CMake with appropriate arguments.
-# Wiping build directory is not needed since the push policy.
+# Job for creating the make-file using the build.py script calling CMake with appropriate arguments.
+# Wiping the build directory is not needed due to the push policy.
 job-build:
   stage: build
   rules:
@@ -76,18 +78,23 @@ job-build:
     # Expiration period before artifacts expire.
     # FIXME: Currently variable expansion is not possible and is fixed.
     # (See: https://gitlab.com/gitlab-org/gitlab/-/issues/365855)
-    expire_in: 7 days
+    expire_in: 2 days
     paths:
       # Tree of created binaries.
-      - "${SF_DIR_BIN}/"
+      #- "${SF_DIR_BIN}/"
       # Package generator DEB Debian results.
       - "${SF_DIR_PKG}/*.deb"
       # Package generator RPM results.
       - "${SF_DIR_PKG}/*.rpm"
       # Package generator NSIS and NSIS64 results.
       - "${SF_DIR_PKG}/*.exe"
-      # Package generator ZIP results.
+      # Package generator ZIP results and Winget definitions.
       - "${SF_DIR_PKG}/*.zip"
+      - "${SF_DIR_PKG}/*.zip-def"
+      # Package generator TGZ results.
+      - "${SF_DIR_PKG}/*.tar.gz"
+      # Package generator TGZ results.
+      - "${SF_DIR_PKG}/*.AppImage"
     exclude:
       - "**/.gitkeep"
   before_script:
@@ -96,15 +103,23 @@ job-build:
     # The make stage needs tags for versioning of shared libraries and packaging.
     - *tags-script
     # Execute the build script to CMake the makefiles.
-    - './build.sh --workflow "${SF_TOOLCHAIN}-${SF_BUILD_TYPE}"'
+    - '${SF_BUILD_CMD} --workflow "${SF_TOOLCHAIN}-${SF_BUILD_TYPE}"'
 
-# Template for all deploy jobs.
+# Template for all 'deploy' jobs.
 .deploy:
   script:
     # Upload all generated packages to Nexus depending on their extension to a specific destination.
-    - 'find "${SF_DIR_PKG}" -maxdepth 1 -type f -name "*.deb" -o -name "*.exe" -o -name "*.zip" | xargs cmake/lib/bin/upload-nexus.sh'
+    - >-
+      ./build.py publish
+      "${SF_DIR_PKG}/*.deb"
+      "${SF_DIR_PKG}/*.exe"
+      "${SF_DIR_PKG}/*.zip"
+      "${SF_DIR_PKG}/*.zip-def"
+      "${SF_DIR_PKG}/*.tar.gz"
+      "${SF_DIR_PKG}/*.rpm"
+      "${SF_DIR_PKG}/*.AppImage"
 
-# Use non specific environment depended variables for deployment of development builds.
+# Use non-specific environment depended on variables to deploy development builds.
 job-deploy-develop:
   stage: deploy
   extends: .deploy
@@ -112,7 +127,7 @@ job-deploy-develop:
     - job: job-build
   # Jobs from which it needs artifacts.
   dependencies:
-    -  job-build
+    - job-build
   rules:
     # For testing the 'deploy' step in any scenario.
     - if: '$SF_SIGNAL == "deploy"'
@@ -142,7 +157,7 @@ job-deploy-staging:
       when: manual
       # Make this job optional.
       allow_failure: true
-    # When this branch is not the release branch set it allow manual deployment.
+    # When this branch is not the release branch, set it allow manual deployment.
     - if: '$CI_COMMIT_REF_NAME == $SF_RELEASE_BRANCH'
       when: manual
       allow_failure: true

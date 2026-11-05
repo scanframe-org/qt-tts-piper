@@ -58,11 +58,11 @@ class CommandLine
 	private:
 		struct Argument
 		{
-				std::vector<std::string> mFlags;
-				Value mValue;
-				std::string mHelp;
+				std::vector<std::string> _flags;
+				Value _value;
+				std::string _help;
 		};
 
-		std::string mDescription;
-		std::vector<Argument> mArguments;
+		std::string _description;
+		std::vector<Argument> _arguments;
 };

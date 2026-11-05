@@ -2,11 +2,19 @@
 ' Available themes: materia, vibrant, toy, crt-amber
 '!theme vibrant
 <style>
-	FontName Arial
-	FontSize 11
-	Title {
-		FontSize 18
+	root
+	{
+		FontName Arial
+		FontSize 13
+		Padding 0
+		Margin 5
+		'HorizontalAlignment Left
+		BackgroundColor #white
+	}
+	title{
 		FontStyle Bold
+		FontSize 16
+		FontColor #black
 	}
 	Document {
 		BackgroundColor #fdfdfd

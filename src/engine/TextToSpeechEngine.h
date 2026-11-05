@@ -1,97 +1,109 @@
 #pragma once
 #include "TextToSpeechSynthesizer.h"
+#include "AudioStream.h"
 #include <QAudioSink>
-#include <QBuffer>
+#include <QMediaDevices>
 #include <QSettings>
 #include <QtTextToSpeech/QTextToSpeechEngine>
 
 namespace sf
 {
 
+/**
+ * @brief Implementation of a text-to-speech engine using the Piper library and Qt's QTextToSpeechEngine.
+ */
 class TextToSpeechEngine : public QTextToSpeechEngine
 {
 		Q_OBJECT
 
 	public:
+		/// @brief Default constructor.
 		explicit TextToSpeechEngine(const QVariantMap& parameters, QObject* parent = nullptr);
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		~TextToSpeechEngine() override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		QList<QLocale> availableLocales() const override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		QList<QVoice> availableVoices() const override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		void say(const QString& text) override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		void synthesize(const QString& text) override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		void stop(QTextToSpeech::BoundaryHint boundaryHint) override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		void pause(QTextToSpeech::BoundaryHint boundaryHint) override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		void resume() override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		double rate() const override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		bool setRate(double rate) override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		double pitch() const override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		bool setPitch(double pitch) override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		QLocale locale() const override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		bool setLocale(const QLocale& locale) override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		double volume() const override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		bool setVolume(double volume) override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		QVoice voice() const override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		bool setVoice(const QVoice& voice) override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		QTextToSpeech::State state() const override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		QTextToSpeech::ErrorReason errorReason() const override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		QString errorString() const override;
 
-		/// @brief Overridden from base clas.
+		/// @brief Overridden from base class.
 		QTextToSpeech::Capabilities capabilities() const override;
 
-		void playQueued();
-
 	private:
+		/// @brief Handle synthesized buffers.
+		void handleQueued();
+
 		/// @brief triggers a status update signal when the state actually changes.
-		void updateState(QTextToSpeech::State newState);
+		void updateState(QTextToSpeech::State new_state);
+
+		/// @brief Updates the settings according to the existing passed voice index.
+		bool updateVoice(qsizetype idx);
 
 		/// @brief Gets the audio sink instance pointer.
 		QAudioSink* getAudioSink();
 
-		/// @brief plays the raw buffer to the default audio device.
-		void playBuffer(const TextToSpeechSynthesizer::buffer_t& audio_data);
+		/// @brief Sends the raw buffer to the caller.
+		void sendBuffer(const QByteArray& audio_data);
+
+		/// @brief Plays the raw buffer to the default audio device.
+		void playBuffer(const QByteArray& audio_data);
 
 		/// @brief Handles the state changes of the audio sink and starts a queued buffer to play.
 		void AudioSinkStateChange(QAudio::State state);
@@ -110,7 +122,6 @@ class TextToSpeechEngine : public QTextToSpeechEngine
 
 		/// @brief Optional model settings for adding speaker gender info from a model filename and speaker index.
 		QSettings _settings;
-
 		/// Current state of the engine.
 		QTextToSpeech::State _state;
 		/// Last error reason.
@@ -123,33 +134,39 @@ class TextToSpeechEngine : public QTextToSpeechEngine
 		QDir _dirModels;
 		/// Holds the directory location of 'espeak_ng_data'.
 		QDir _dirEspeakNgData;
+
 		/// Holds the selected locale, voice, volume, and audio format.
 		struct
 		{
-			/// Holds the selected locale.
-			QLocale locale;
-			/// Holds the selected voice index where -1 is not selected.
-			int voice{-1};
-			/// Holds the audio format.
-			QAudioFormat audioFormat;
-			/// Holds the volume set.
-			double volume;
+				/// Holds the selected locale.
+				QLocale locale{};
+				/// Holds the selected voice index where -1 is not selected.
+				int voice{-1};
+				/// Holds the audio format.
+				QAudioFormat audioFormat{};
+				/// Holds the volume set.
+				double volume{1.0};
 		} _selected;
+
 		/// Holds the list of available locales.
 		QList<QLocale> _locales;
 		/// Holds the list of available voices.
 		QList<QVoice> _voices;
 		/// Holds the rate of speaking in a range from -1.0 to 1.0.
-		double _rate;
+		double _rate{0.0};
 		/// Type to pass to the voice.
 		typedef QPair<QString, int> FileSpeaker;
+		/// Holds the audio device.
+		QMediaDevices _mediaDevices;
+		/// Holds the audio device.
+		QAudioDevice _audioDevice;
 		/// Instance to play the synthesized audio buffer.
-		QAudioSink* _audioSink{nullptr};
+		QAudioSink* _audioSink;
 		/// Buffer instance to pass to the QAudioSink instance.
-		QBuffer* _buffer{nullptr};
-		///
-		bool _playSentry{false};
-		//
+		AudioStream* _stream;
+		/// @brief Guards against multiple concurrent audio playback attempts in the text-to-speech engine.
+		bool _playSentry;
+		/// @brief Worker thread doing the heavy work for text-to-speech synthesis.
 		TextToSpeechSynthesizer _worker;
 };
 
