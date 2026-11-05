@@ -4,7 +4,6 @@
 #include <iostream>
 #include "test-CommandLine.h"
 #include "test-helpers.h"
-#include "json.hpp"
 
 int main(int argc, char* argv[])
 {
@@ -51,7 +50,7 @@ Somewhere in the distance, a bird chirped a melody that seemed to echo through t
 	}
 	// Set the development location for the directory.
 	if (!espeak_ng_data.length())
-		espeak_ng_data = getExecutablePath().parent_path().parent_path().parent_path().append("src").append("piper").append("espeak-ng-data").string();
+		espeak_ng_data = getExecutablePath().parent_path().append("lib").append("texttospeech").append("espeak-ng-data").string();
 
 	// Try finding the 'models' directory one directory up.
 	if (!std::filesystem::exists(std::filesystem::path(espeak_ng_data)))

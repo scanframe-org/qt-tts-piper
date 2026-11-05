@@ -1,0 +1,24 @@
+{
+	"version": 6,
+	"cmakeMinimumRequired": {
+		"major": 3,
+		"minor": 29,
+		"patch": 0
+	},
+	"configurePresets": [
+		{
+			"name": ".base",
+			"hidden": true,
+			"cacheVariables": {
+				"ONNXRUNTIME_VERSION": {
+					"type": "STRING",
+					"value": "1.23.2"
+				},
+				"PIPER_BUILD_LIB_ONLY": {
+					"type": "BOOL",
+					"value": "ON"
+				}
+			}
+		}
+	]
+}
