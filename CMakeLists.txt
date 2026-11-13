@@ -68,8 +68,6 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 # Make sure builds do not wind up in the source directory.
-find_package(SfMacros CONFIG REQUIRED)
-# Make sure builds do not wind up in the source directory.
 find_package(SfBuildCheck CONFIG REQUIRED)
 if (SF_BUILD_QT)
 	# Get the Qt version from the 'build.ini' file.
