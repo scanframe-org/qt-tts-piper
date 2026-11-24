@@ -22,7 +22,7 @@ Validate this file using: appstreamcli validate &#45;&#45;pedantic <xml-file>
 		Hugging Face (rhasspy/piper-voices)</p>
 	</description>
 
-	<url type="homepage">https://github.com/Scanframe/qt-tts-piper</url>
+	<url type="homepage">https://github.com/scanframe-org/qt-tts-piper</url>
 	<provides>
 		<binary>qt-tts-piper-gui</binary>
 		<binary>qt-tts-piper-cli</binary>

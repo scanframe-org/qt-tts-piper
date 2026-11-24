@@ -147,7 +147,7 @@ def fix_submodule_url() -> None:
 			origin_url: str = result.stdout.strip()
 			if os.path.dirname(origin_url) == 'https://github.com/Scanframe':
 				print("Fixing cmake library submodule URL.")
-				run_command(["git", "config", "--file", ".gitmodules", "submodule.cmake/lib.url", "https://github.com/Scanframe/sf-cmake.git"])
+				run_command(["git", "config", "--file", ".gitmodules", "submodule.cmake/lib.url", "https://github.com/scanframe-org/sf-cmake.git"])
 	except Exception as e:
 		print(f"! Warning: Failed to fix submodule URL: {e}")
 
